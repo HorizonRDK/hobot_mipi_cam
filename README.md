@@ -70,7 +70,9 @@ source /opt/tros/setup.bash
 ros2 run mipi_cam mipi_cam --ros-args -p io_method:=shared_mem
 ````
 
-注意：基于共享内存的方式只适用于RDK单板卡内部使用，无法用于分布式传输。
+**注意：**
+
+基于共享内存的方式只适用于RDK单板卡内部使用，无法用于分布式传输。
 
 
 
