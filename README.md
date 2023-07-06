@@ -157,35 +157,37 @@ ros2 run image_transport republish raw compressed --ros-args --remap in:=/image_
 
 # 常见问题
 1. **使用不同的相机需要设置不同的video_device参数么**
+
     不需要，该Node支持相机自适应，如果使用“支持相机”章节中列出的相机型号，运行时会自动适配。
+
 2. **如何更换DDS**
 
-  ROS2 Foxy默认使用的是fastdds，在图像传输的场景下，会受到限制，此时我们可以切换为cyclonedds。
+    ROS2 Foxy默认使用的是fastdds，在图像传输的场景下，会受到限制，此时我们可以切换为cyclonedds。
 
-- 安装cyclonedds
+    - 安装cyclonedds
 
-  ```
-  sudo apt install ros-foxy-rmw-cyclonedds-cpp
-  ```
+      ```
+      sudo apt install ros-foxy-rmw-cyclonedds-cpp
+      ```
 
-- 切换使用的dds
+    - 切换使用的dds
 
-  ```
-  export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
-  ```
+      ```
+      export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+      ```
 
-  cyclonedds默认会绑定某一网卡进行数据传输，如果需要切换绑定的网卡，可以继续在该终端中输入：
+      cyclonedds默认会绑定某一网卡进行数据传输，如果需要切换绑定的网卡，可以继续在该终端中输入：
 
-  ```
-  export CYCLONEDDS_URI='<CycloneDDS><Domain><General><NetworkInterfaceAddress>wlan0</NetworkInterfaceAddress></General></Domain></CycloneDDS>'
-  ```
+      ```
+      export CYCLONEDDS_URI='<CycloneDDS><Domain><General><NetworkInterfaceAddress>wlan0</NetworkInterfaceAddress></General></Domain></CycloneDDS>'
+      ```
 
-  中间的参数就是绑定网卡的名字，按照实际需要，修改为eth0、wlan0，或者实际的网卡设备号。[参考链接](http://www.robotandchisel.com/2020/08/12/cyclonedds/)
+      中间的参数就是绑定网卡的名字，按照实际需要，修改为eth0、wlan0，或者实际的网卡设备号。[参考链接](http://www.robotandchisel.com/2020/08/12/cyclonedds/)
 
 3. **图像传输慢，上位机看到的图像有卡顿**
 
-  主要有两种解决方案：
+      主要有两种解决方案：
 
-  （1）将DDS更换为cyclonedds：参考“如何更换DDS”进行操作
+      （1）将DDS更换为cyclonedds：参考“如何更换DDS”进行操作
 
-  （2）使用压缩后的图像做传输：参考使用方法中的“图像压缩与解压缩”，先将图像压缩后再传输到PC端使用。
+      （2）使用压缩后的图像做传输：参考使用方法中的“图像压缩与解压缩”，先将图像压缩后再传输到PC端使用。
