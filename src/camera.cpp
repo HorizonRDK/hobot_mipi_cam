@@ -16,20 +16,24 @@
 #include <memory>
 
 #include "rclcpp/rclcpp.hpp"
-#include "mipi_cam/mipi_cam_node.hpp"
-
-using mipi_cam::MipiCamNode;
+#ifdef PLATFORM_X3
+  #include "mipi_cam/mipi_cam_node.hpp"
+  using mipi_cam::MipiCamNode;
+#endif
 
 int main(int argc, char** argv) {
   RCLCPP_WARN(rclcpp::get_logger("mipi_cam"), "This is version for optimizing camera timestamp!");
 
   rclcpp::init(argc, argv);
+  
+#ifdef PLATFORM_X3
   rclcpp::NodeOptions opt;
   auto node = std::make_shared<MipiCamNode>(opt);
   node->init();
   rclcpp::executors::SingleThreadedExecutor exec;
   exec.add_node(node);
   exec.spin();
+#endif
 
   rclcpp::shutdown();
   return 0;

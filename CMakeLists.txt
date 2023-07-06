@@ -39,50 +39,66 @@ find_package(rclcpp REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(yaml_cpp_vendor REQUIRED)
 
-include_directories(include
-  src/x3
-  src/x3_sdk_swap/include
-)
+if(PLATFORM_X3)
+  message("build platform X3")
+  add_definitions(-DPLATFORM_X3)
 
-link_directories(
-  ${CMAKE_SYSROOT}/usr/lib/hbmedia/
-)
+  include_directories(include
+    src/x3
+    src/x3_sdk_swap/include
+  )
 
-## Build the mipi camera library
-add_executable(${PROJECT_NAME}
-  src/camera.cpp
-  src/mipi_cam_node.cpp
-  src/mipi_cam.cpp
-  src/mipi_cap.cpp
-#  src/x3/*.c
-  src/x3/sensor_f37_config.c
-  src/x3/sensor_imx415_config.c
-  src/x3/sensor_gc4663_config.c
-  src/x3/sensor_imx586_config.c
-  src/x3/sensor_gc4c33_config.c
-  src/x3/sensor_imx219_config.c
-  src/x3/sensor_imx477_config.c
-  src/x3/sensor_ov5647_config.c
-  src/x3/x3_preparam.c
-  src/x3/x3_utils.c
-  src/x3_sdk_swap/src/x3_sdk_wrap.c
-  src/x3_sdk_swap/src/x3_vio_bind.c
-  src/x3_sdk_swap/src/x3_vio_rgn.c
-  src/x3_sdk_swap/src/x3_vio_utils.c
-  src/x3_sdk_swap/src/x3_vio_vdec.c
-  src/x3_sdk_swap/src/x3_vio_vin.c
-  src/x3_sdk_swap/src/x3_vio_vot.c
-  src/x3_sdk_swap/src/x3_vio_vps.c
-  src/x3_sdk_swap/src/x3_vio_venc.cpp
-  src/x3_sdk_swap/src/x3_vio_vp.cpp
-)
+  link_directories(
+    ${CMAKE_SYSROOT}/usr/lib/hbmedia/
+  )
 
-set(BASE_LIBRARIES pthread vio cam dl)
-set(X3_HAPI_LIB isp_algo z hbmedia isp ion multimedia iar tinyalsa cjson diag gdcbin)
+  ## Build the mipi camera library
+  add_executable(${PROJECT_NAME}
+    src/camera.cpp
+    src/mipi_cam_node.cpp
+    src/mipi_cam.cpp
+    src/mipi_cap.cpp
+  #  src/x3/*.c
+    src/x3/sensor_f37_config.c
+    src/x3/sensor_imx415_config.c
+    src/x3/sensor_gc4663_config.c
+    src/x3/sensor_imx586_config.c
+    src/x3/sensor_gc4c33_config.c
+    src/x3/sensor_imx219_config.c
+    src/x3/sensor_imx477_config.c
+    src/x3/sensor_ov5647_config.c
+    src/x3/x3_preparam.c
+    src/x3/x3_utils.c
+    src/x3_sdk_swap/src/x3_sdk_wrap.c
+    src/x3_sdk_swap/src/x3_vio_bind.c
+    src/x3_sdk_swap/src/x3_vio_rgn.c
+    src/x3_sdk_swap/src/x3_vio_utils.c
+    src/x3_sdk_swap/src/x3_vio_vdec.c
+    src/x3_sdk_swap/src/x3_vio_vin.c
+    src/x3_sdk_swap/src/x3_vio_vot.c
+    src/x3_sdk_swap/src/x3_vio_vps.c
+    src/x3_sdk_swap/src/x3_vio_venc.cpp
+    src/x3_sdk_swap/src/x3_vio_vp.cpp
+  )
 
-target_link_libraries(${PROJECT_NAME}
-  ${BASE_LIBRARIES} ${X3_HAPI_LIB} yaml-cpp
-)
+  set(BASE_LIBRARIES pthread vio cam dl)
+  set(X3_HAPI_LIB isp_algo z hbmedia isp ion multimedia iar tinyalsa cjson diag gdcbin)
+
+  target_link_libraries(${PROJECT_NAME}
+    ${BASE_LIBRARIES} ${X3_HAPI_LIB} yaml-cpp
+  )
+elseif(PLATFORM_J5)
+  message("build platform J5")
+  add_definitions(-DPLATFORM_J5)
+  
+  add_executable(${PROJECT_NAME}
+    src/camera.cpp
+  )
+
+  target_link_libraries(${PROJECT_NAME}
+    ${BASE_LIBRARIES}
+  )
+endif()
 
 ament_target_dependencies(
   ${PROJECT_NAME}
