@@ -12,51 +12,40 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
+from launch.substitutions import TextSubstitution
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
+from ament_index_python.packages import get_package_prefix
 
 
 def generate_launch_description():
+    config_path = os.path.join(
+        get_package_prefix('mipi_cam'),
+        'lib/mipi_cam/config')
+
+    config_path_launch_arg = DeclareLaunchArgument(
+        "config_path", default_value=TextSubstitution(text="null")
+    )
+    
     return LaunchDescription([
-        DeclareLaunchArgument(
-            'mipi_camera_calibration_file_path',
-            default_value='/opt/tros/lib/mipi_cam/config/F37_calibration.yaml',
-            description='mipi camera calibration file path'),
-        DeclareLaunchArgument(
-            'mipi_out_format',
-            default_value='nv12',
-            description='mipi camera out format'),
-        DeclareLaunchArgument(
-            'mipi_image_width',
-            default_value='960',
-            description='mipi camera out image width'),
-        DeclareLaunchArgument(
-            'mipi_image_height',
-            default_value='544',
-            description='mipi camera out image height'),
-        DeclareLaunchArgument(
-            'mipi_io_method',
-            default_value='shared_mem',
-            description='mipi camera out io_method'),
-        DeclareLaunchArgument(
-            'mipi_video_device',
-            default_value='F37',
-            description='mipi camera device'),
+        config_path_launch_arg,
         # 启动图片发布pkg
         Node(
             package='mipi_cam',
             executable='mipi_cam',
             output='screen',
             parameters=[
-                {"camera_calibration_file_path": LaunchConfiguration(
-                    'mipi_camera_calibration_file_path')},
-                {"out_format": LaunchConfiguration('mipi_out_format')},
-                {"image_width": LaunchConfiguration('mipi_image_width')},
-                {"image_height": LaunchConfiguration('mipi_image_height')},
-                {"io_method": LaunchConfiguration('mipi_io_method')},
-                {"video_device": LaunchConfiguration('mipi_video_device')}
+                {"config_path": [config_path, "/",
+                                  LaunchConfiguration('config_path')]},
+                {"camera_calibration_file_path": "/opt/tros/lib/mipi_cam/config/F37_calibration.yaml"},
+                {"out_format": "nv12"},
+                {"image_width": 960},
+                {"image_height": 544},
+                {"io_method": "shared_mem"},
+                {"video_device": ""}
             ],
             arguments=['--ros-args', '--log-level', 'error']
         )
