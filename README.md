@@ -3,7 +3,7 @@ MIPI（移动行业处理器接口）是Mobile Industry Processor Interface的�
 
 该Node提供的主要功能是基于RDK套件MIPI接口的摄像头驱动，可以轻松抓取MIPI相机的视频流数据，并且发布ROS标准的图像数据，供其他Node订阅。除此之外，该Node还支持发布共享内存形式的图像数据，提高RDK端侧图像传输的效率。
 
-目前支持F37、IMX415、GC4663、IMX219、IMX477、OV5647等MIPI相机。
+
 
 
 # 支持相机
@@ -94,44 +94,45 @@ ros2 run mipi_cam mipi_cam --ros-args -p camera_calibration_file_path:=./config/
 ros2 run rqt_image_view rqt_image_view
 ```
 
-![rqt_image](image/rqt_image.png)
+![rqt_image](image/rqt_image.jpg)
 
 
 
-## 图像压缩与解压缩
+## 图像压缩
 
-以上相机驱动后发布的图像数据均为未经压缩的原始图像，先对资源消耗较多，如需使用图像压缩，可使用如下中继的方式：
-
-```bash
-ros2 run image_transport republish [in_transport] in:=<in_base_topic> [out_transport] out:=<out_base_topic>
-```
-
-例如：
-
-```bash
-ros2 run image_transport republish raw compressed --ros-args --remap in:=/image_raw --remap out/compressed:=/image_raw/compressed
-```
-
-运行成功后，会产生发布压缩图像的 compressed 话题，其他节点可订阅该话题，例如：
-
-```bash
-ros2 run image_subscribe_example subscribe_example --ros-args -p sub_img_topic:=/image_raw/compressed
-```
-
-
-
-
-**注意：**
-
-此功能需要安装ROS中的image_transport_plugins功能包，安装命令如下：
+以上相机驱动后发布的图像数据均为未经压缩的原始图像，相对资源消耗较多，如需使用图像压缩，可使用ROS中的image_transport_plugins实现，使用前需要先进行安装：
 
 ```bash
 sudo apt-get install ros-foxy-image-transport-plugins
 ```
 
+在第一个终端中启动相机：
+
+```bash
+source /opt/tros/setup.bash
+ros2 run mipi_cam mipi_cam --ros-args -p image_width:=960 -p image_height:=540
+```
+
+新启动一个终端，运行图像压缩：
+
+```bash
+source /opt/ros/foxy/setup.bash
+ros2 run image_transport republish raw compressed --ros-args --remap in:=/image_raw --remap out/compressed:=/image_raw/compressed
+```
+
+运行以上指令后，就可以在同一网络的PC端使用rqt_image_view看到压缩后的图像了，明显可以感受到图像传输更加流畅了。
+
+![imagecompress](image/image_compress.jpg)
+
+**注意：**
+
+为了提高DDS图像传输的效率，建议将RDK上运行的DDS更换为cyclonedds，更换方法请参考常见问题中的“如何更换DDS”。
+
 
 
 # 接口说明
+
+![interface](image/interface.png)
 
 ## 话题
 
@@ -155,4 +156,36 @@ sudo apt-get install ros-foxy-image-transport-plugins
 
 
 # 常见问题
+1. **使用不同的相机需要设置不同的video_device参数么**
+    不需要，该Node支持相机自适应，如果使用“支持相机”章节中列出的相机型号，运行时会自动适配。
+2. **如何更换DDS**
 
+  ROS2 Foxy默认使用的是fastdds，在图像传输的场景下，会受到限制，此时我们可以切换为cyclonedds。
+
+- 安装cyclonedds
+
+  ```
+  sudo apt install ros-foxy-rmw-cyclonedds-cpp
+  ```
+
+- 切换使用的dds
+
+  ```
+  export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+  ```
+
+  cyclonedds默认会绑定某一网卡进行数据传输，如果需要切换绑定的网卡，可以继续在该终端中输入：
+
+  ```
+  export CYCLONEDDS_URI='<CycloneDDS><Domain><General><NetworkInterfaceAddress>wlan0</NetworkInterfaceAddress></General></Domain></CycloneDDS>'
+  ```
+
+  中间的参数就是绑定网卡的名字，按照实际需要，修改为eth0、wlan0，或者实际的网卡设备号。[参考链接](http://www.robotandchisel.com/2020/08/12/cyclonedds/)
+
+3. **图像传输慢，上位机看到的图像有卡顿**
+
+  主要有两种解决方案：
+
+  （1）将DDS更换为cyclonedds：参考“如何更换DDS”进行操作
+
+  （2）使用压缩后的图像做传输：参考使用方法中的“图像压缩与解压缩”，先将图像压缩后再传输到PC端使用。
