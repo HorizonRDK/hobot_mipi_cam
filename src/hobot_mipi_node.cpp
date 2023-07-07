@@ -201,7 +201,6 @@ bool MipiCamNode::sendCalibration(const builtin_interfaces::msg::Time& stamp) {
 }
 
 void MipiCamNode::update() {
-  std::cout << "MipiCamNode::update-----111111" << std::endl;
   if (mipiCam_ptr_->isCapturing()) {
     if (!mipiCam_ptr_->getImage(img_->header.stamp,
                             img_->encoding,
@@ -224,7 +223,6 @@ void MipiCamNode::update() {
 }
 
 void MipiCamNode::hbmemUpdate() {
-  std::cout << "MipiCamNode::hbmemUpdate-----111111" << std::endl;
 #ifdef USING_HBMEM
   if (mipiCam_ptr_->isCapturing()) {
     auto loanedMsg = publisher_hbmem_->borrow_loaned_message();

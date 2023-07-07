@@ -139,14 +139,14 @@ int HobotMipiCapIml::init(MIPI_CAP_INFO_ST &info) {
     "vio_cfg_file_: %s.\n", vio_cfg_file_.c_str());
   cam_cfg_index_ = 0;
 
-  //ret = hb_vio_cfg_check(vio_cfg_file_.c_str(), cam_cfg_file_.c_str(),
- //       cam_cfg_index_);
- // if (ret < 0) {
- //   RCLCPP_ERROR(rclcpp::get_logger("mipi_cam"),
- //     "vcs check cfg fail vpm:%s\n vin:%s\n index:%d,error:%d\n",
- //     cam_cfg_file_.c_str(), vio_cfg_file_.c_str(), cam_cfg_index_, ret);
- //   return -1;
- // }
+  // ret = hb_vio_cfg_check(vio_cfg_file_.c_str(), cam_cfg_file_.c_str(),
+  //       cam_cfg_index_);
+  // if (ret < 0) {
+  //  RCLCPP_ERROR(rclcpp::get_logger("mipi_cam"),
+  //    "vcs check cfg fail vpm:%s\n vin:%s\n index:%d,error:%d\n",
+  //    cam_cfg_file_.c_str(), vio_cfg_file_.c_str(), cam_cfg_index_, ret);
+  //  return -1;
+  // }
   ret = hb_vio_init(vio_cfg_file_.c_str());
   if (ret != 0) {
     RCLCPP_ERROR(rclcpp::get_logger("mipi_cam"),
@@ -157,7 +157,7 @@ int HobotMipiCapIml::init(MIPI_CAP_INFO_ST &info) {
   }
   RCLCPP_INFO(rclcpp::get_logger("mipi_cam"),
     "cam_cfg_file_: %s.\n", cam_cfg_file_.c_str());
-  std::cout << "cam_cfg_index_:" << cam_cfg_index_ << std::endl;
+  // std::cout << "cam_cfg_index_:" << cam_cfg_index_ << std::endl;
 
   ret = hb_cam_init(cam_cfg_index_, cam_cfg_file_.c_str());
   if (ret != 0) {
@@ -256,6 +256,7 @@ int HobotMipiCapIml::getFrame(int nChnID, int* nVOutW, int* nVOutH,
   struct timeval select_timeout = {0};
   pym_buffer_v2_t pym_buf;
   hb_vio_buffer_t isp_buf;
+  pym_buffer_common_t pym_common_buf;
   int pipe_id = 0;
   int i = 0;
   int stride = 0, width = 0, height = 0;
@@ -265,14 +266,16 @@ int HobotMipiCapIml::getFrame(int nChnID, int* nVOutW, int* nVOutH,
     return -1;
   }
   do {
+#if 0
     ret = hb_vio_get_data(pipe_id, HB_VIO_PYM_DATA_V2, &pym_buf);
     if (ret < 0) {
       if (ret == -24) {
         printf("==== %d hb_vio_get_data(%d) no available buf ret %d\n",
                __LINE__, pipe_id, ret);
       }
-      // else{
-      // }
+      else{
+        std::cout << "hb_vio_get_data--error,ret:" << ret << std::endl;
+      }
       usleep(10 * 1000);
       continue;
     }
@@ -285,6 +288,8 @@ int HobotMipiCapIml::getFrame(int nChnID, int* nVOutW, int* nVOutH,
     stride = pym_addr->stride_size;
     width = pym_addr->width;
     height = pym_addr->height;
+    RCLCPP_INFO(rclcpp::get_logger("mipi_cam"),
+      "stride : %d;width : %d;height : %d\n", stride, width, height);
     if (bufsize < (width * height * 3 / 2)) {
       hb_vio_free_pymbuf(pipe_id, HB_VIO_PYM_DATA_V2, &pym_buf);
       std::cout << "HobotMipiCapIml::getFrame--- bufsize > "
@@ -317,6 +322,93 @@ int HobotMipiCapIml::getFrame(int nChnID, int* nVOutW, int* nVOutH,
       printf("hb_vio_free_pymbuf %d ret %d\n", __LINE__, ret);
     }
     break;
+#elif 0
+    ret = hb_vio_get_data(pipe_id, HB_VIO_PYM_COMMON_DATA, &pym_common_buf);
+    if (ret < 0) {
+      if (ret == -24) {
+        printf("==== %d hb_vio_get_data(%d) no available buf ret %d\n", __LINE__, pipe_id, ret);
+      } else{
+        std::cout << "hb_vio_get_data--error,ret:" << ret << std::endl;
+      }
+      usleep(10 * 1000);
+      continue;
+    }
+    address_info_t *pym_info = &(pym_common_buf.pym[0]);
+    stride = pym_info->stride_size;
+    width = pym_info->width;
+    height = pym_info->height;
+    *nVOutW = width;
+    *nVOutH = height;
+    *len = width * height * 3 / 2;
+    RCLCPP_INFO(rclcpp::get_logger("mipi_cam"),
+      "stride : %d;width : %d;height : %d\n", stride, width, height);
+    if (stride == width) {
+      memcpy(frame_buf, pym_info->addr[0], width * height);
+      memcpy(frame_buf + width * height,
+             pym_info->addr[1],
+             width * height / 2);
+    } else {
+      // jump over stride - width Y
+      for (i = 0; i < height; i++) {
+        memcpy(frame_buf + i * width,
+          pym_info->addr[0] + i * stride, width);
+      }
+      // jump over stride - width UV
+      for (i = 0; i < height / 2; i++) {
+        memcpy(frame_buf + width * height + i * width,
+               pym_info->addr[1] + i * stride,
+               width);
+      }
+    }
+    ret = hb_vio_free_pymbuf(pipe_id, HB_VIO_PYM_COMMON_DATA, &pym_common_buf);
+    if (ret < 0) {
+      printf("hb_vio_free_pymbuf %d ret %d\n", __LINE__, ret);
+    }
+    break;
+#else
+    ret = hb_vio_get_data(pipe_id, HB_VIO_ISP_YUV_DATA, &isp_buf);
+    if (ret < 0) {
+      if (ret == -24) {
+        printf("==== %d hb_vio_get_data(%d) no available buf ret %d\n", __LINE__, pipe_id, ret);
+      } else{
+        std::cout << "hb_vio_get_data--error,ret:" << ret << std::endl;
+      }
+      usleep(10 * 1000);
+      continue;
+    }
+    stride = isp_buf.img_addr.stride_size;
+    width = isp_buf.img_addr.width;
+    height = isp_buf.img_addr.height;
+    stride = width;
+    RCLCPP_INFO(rclcpp::get_logger("mipi_cam"),
+      "stride : %d;width : %d;height : %d\n", stride, width, height);
+    *nVOutW = width;
+    *nVOutH = height;
+    *len = width * height * 3 / 2;
+    if (stride == width) {
+      memcpy(frame_buf, isp_buf.img_addr.addr[0], width * height);
+      memcpy(frame_buf + width * height,
+             isp_buf.img_addr.addr[1],
+             width * height / 2);
+    } else {
+      // jump over stride - width Y
+      for (i = 0; i < height; i++) {
+        memcpy(frame_buf + i * width,
+          isp_buf.img_addr.addr[0] + i * stride, width);
+      }
+      // jump over stride - width UV
+      for (i = 0; i < height / 2; i++) {
+        memcpy(frame_buf + width * height + i * width,
+               isp_buf.img_addr.addr[1] + i * stride,
+               width);
+      }
+    }
+    ret = hb_vio_free_pymbuf(pipe_id, HB_VIO_ISP_YUV_DATA, &isp_buf);
+    if (ret < 0) {
+      printf("hb_vio_free_pymbuf %d ret %d\n", __LINE__, ret);
+    }
+    break;
+#endif
   } while (1);
   return 0;
 }
@@ -437,7 +529,7 @@ std::vector<std::string> HobotMipiCapImlRDKJ5::listSensor() {
 }
 
 int HobotMipiCapImlRDKJ5::resetSensor(std::string sensor) {
-  std::cout << "HobotMipiCapImlRDKJ5::resetSensor" << std::endl;
+  // std::cout << "HobotMipiCapImlRDKJ5::resetSensor" << std::endl;
   // 两个sensor使用的同一个reset管脚，只需要复位一次
 }
 
@@ -500,7 +592,7 @@ std::vector<std::string> HobotMipiCapImlJ5Evm::listSensor() {
     }
     // i2ctransfer -y -f 3 w2@0x36 0x1 0x0 r1 2>&1 ;这个命令执行会崩溃
     exec_cmd_ex(cmd, result, sizeof(result));
-    printf("result:%s\n", result);
+    // printf("result:%s\n", result);
     if (strstr(result, "Error") == NULL && strstr(result, "error") == NULL) {
       // 返回结果中不带Error, 说明sensor找到了
       device.push_back(sensor_id_list[i].sensor_name);

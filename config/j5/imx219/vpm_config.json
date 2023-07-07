@@ -19,10 +19,10 @@
 			"output_crop_y": 0,
 			"output_crop_width": 0,
 			"output_crop_height": 0,
-			"isp_stream_output_format": 1,
-			"isp_dma_output_format": 0,
+			"isp_stream_output_format": 0,
+			"isp_dma_output_format": 11,
 			"calib_mode": 1,
-			"calib_lname": "/system/etc/cam/lib_ar0820RGGB_pwl12_WS_Fov120.so",
+			"calib_lname": "./lib/mipi_cam/config/imx219/lib_imx219_linear.so",
 			"isp_algo_state": 1
 		},
 		"pym": {
@@ -56,7 +56,7 @@
 			},
 			"pym_ctrl": {
 				"source_en": 1,
-				"src_uv_bypass": 1,
+				"src_uv_bypass": 0,
 				"src_in_width": 1920,
 				"src_in_height": 1080,
 				"src_in_stride_y": 1920,
@@ -74,7 +74,7 @@
 				"pixel_num_before_sol": 16,
 				"gs_max_layer_en": 5,
 				"gs_en": 1,
-				"gs_uv_bypass": 1,
+				"gs_uv_bypass": 0,
 				"gauss_info": [
 				{
 					"gs_start_top": 0,
@@ -119,7 +119,7 @@
 				],
 				"bl_max_layer_en": 5,
 				"bl_en": 1,
-				"bl_uv_bypass": 1,
+				"bl_uv_bypass": 0,
 				"bilinear_info": [
 				{
 					"bl_start_top": 0,
@@ -173,7 +173,7 @@
 				"us_roi_out_width": 640,
 				"us_roi_out_height": 480,
 				"ds_roi_en": 1,
-				"ds_roi_uv_bypass": 1,
+				"ds_roi_uv_bypass": 0,
 				"ds_roi": [
 				{
 					"ds_roi_layer": 0,

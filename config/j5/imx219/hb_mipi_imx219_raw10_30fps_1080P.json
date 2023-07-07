@@ -2,7 +2,7 @@
 	"mipi": {
 		"base": {
 			"lane": 2,
-			"datatype":"0x2B",
+			"datatype":"0x2b",
 			"mclk": 24,
 			"mipiclk": 1728,
 			"fps": 30,

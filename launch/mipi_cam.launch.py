@@ -27,7 +27,7 @@ def generate_launch_description():
         'lib/mipi_cam/config')
 
     config_path_launch_arg = DeclareLaunchArgument(
-        "config_path", default_value=TextSubstitution(text="null")
+        "config_path", default_value=TextSubstitution(text="")
     )
     
     return LaunchDescription([
@@ -42,8 +42,8 @@ def generate_launch_description():
                                   LaunchConfiguration('config_path')]},
                 {"camera_calibration_file_path": "/opt/tros/lib/mipi_cam/config/F37_calibration.yaml"},
                 {"out_format": "nv12"},
-                {"image_width": 960},
-                {"image_height": 544},
+                {"image_width": 1920},
+                {"image_height": 1080},
                 {"io_method": "shared_mem"},
                 {"video_device": ""}
             ],

@@ -469,7 +469,7 @@ std::vector<std::string> HobotMipiCapImlX3pi::listSensor() {
 }
 
 int HobotMipiCapImlX3pi::resetSensor(std::string sensor) {
-  std::cout << "HobotMipiCapImlX3pi::resetSensor" << std::endl;
+  // std::cout << "HobotMipiCapImlX3pi::resetSensor" << std::endl;
   // x3pi两个sensor使用的同一个reset管脚，只需要复位一次
   (void)system("echo 19 > /sys/class/gpio/export");
   (void)system("echo out > /sys/class/gpio/gpio19/direction");

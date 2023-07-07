@@ -64,7 +64,7 @@ int exec_cmd_ex(const char *cmd, char* res, int max) {
   RCLCPP_INFO(rclcpp::get_logger("mipi_cam"),
     "[%s]->cmd %s, fp=0x%x, len=%d.\n", __func__, cmd, pp, max);
   while (fgets(tmp, length, pp) != NULL) {
-    printf("exec_cmd_ex -- tmp:%s\n", tmp);
+    // printf("exec_cmd_ex -- tmp:%s\n", tmp);
     sscanf(tmp, "%s", res);
   }
   pclose(pp);
@@ -228,7 +228,6 @@ bool MipiCamIml::getImage(builtin_interfaces::msg::Time &stamp,
                         uint32_t &width,
                         uint32_t &step,
                         std::vector<uint8_t> &data) {
-  std::cout << "MipiCamIml::update-----111111" << std::endl;
   if (!is_capturing_) {
     RCLCPP_ERROR(rclcpp::get_logger("mipi_cam"),
       "[%s][%-%d] Camera isn't captureing", __FILE__, __func__, __LINE__);
@@ -262,7 +261,6 @@ bool MipiCamIml::getImage(builtin_interfaces::msg::Time &stamp,
           data_size,
           reinterpret_cast<unsigned int *>(&data_size)))
     return false;
-  std::cout << "MipiCamIml::update-----22222" << std::endl;
   encoding = "nv12";
   clock_gettime(CLOCK_REALTIME, &time_start);
   stamp.sec = time_start.tv_sec;
