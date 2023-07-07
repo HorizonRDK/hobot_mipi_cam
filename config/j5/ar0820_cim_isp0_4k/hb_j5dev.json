@@ -31,7 +31,7 @@
 			"resolution":2160,
 			"deserial_index":0,
 			"deserial_port":0,
-			"data_path":"./lib/mipi_cam/config/j5/ar0820_cim_isp0_4k/cim_config.json",
+			"data_path":"./lib/mipi_cam/config/ar0820_cim_isp0_4k/cim_config.json",
 			"config_path":"/system/etc/cam/hb_mipi_ar0820_raw12_%dfps_%dP.json"
 		}
 	}

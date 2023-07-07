@@ -52,7 +52,7 @@ void MipiCamNode::getParams() {
   this->declare_parameter("frame_id", "default_cam");
   this->declare_parameter("image_height", 1080);  // 480);
   this->declare_parameter("image_width", 1920);   // 640);
-  this->declare_parameter("io_method", "mmap");
+  this->declare_parameter("io_method", "ros");
   this->declare_parameter("out_format", "bgr8");   // nv12
   this->declare_parameter("video_device", "");  // "IMX415");//"F37");
   this->declare_parameter("camera_calibration_file_path",
@@ -101,6 +101,9 @@ void MipiCamNode::getParams() {
     } else if (parameter.get_name() == "io_method") {
       io_method_name_ = parameter.value_to_string();
     } else if (parameter.get_name() == "video_device") {
+      RCLCPP_INFO(rclcpp::get_logger("mipi_node"),
+                  "video_device value: %s",
+                  parameter.value_to_string().c_str());
       nodePare_.video_device_name_ = parameter.value_to_string();
     } else if (parameter.get_name() == "camera_calibration_file_path") {
       nodePare_.camera_calibration_file_path_ = parameter.value_to_string();
@@ -123,8 +126,10 @@ void MipiCamNode::init() {
     // rclcpp::shutdown();
     exit(0);
   }
-  image_pub_ =
+  if (io_method_name_.compare("ros") == 0) {
+    image_pub_ =
       this->create_publisher<sensor_msgs::msg::Image>("image_raw", PUB_BUF_NUM);
+  }
   info_pub_ = this->create_publisher<sensor_msgs::msg::CameraInfo>(
       "camera_info", PUB_BUF_NUM);
 

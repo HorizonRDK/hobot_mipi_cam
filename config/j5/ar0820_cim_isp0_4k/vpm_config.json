@@ -18,8 +18,8 @@
 			"output_crop_y": 0,
 			"output_crop_width": 0,
 			"output_crop_height": 0,
-			"isp_stream_output_format": 1,
-			"isp_dma_output_format": 0,
+			"isp_stream_output_format": 0,
+			"isp_dma_output_format": 11,
 			"calib_mode": 1,
 			"calib_lname": "/system/etc/cam/lib_ar0820RCCB_pwl12_Sens_Fov28.so",
 			"isp_algo_state": 1

@@ -418,10 +418,13 @@ SENSOR_ID_T sensor_id_list_x3pi[] = {
     {2, 0x29, I2C_ADDR_16, 0x03f0, "gc4663"},  // GC4663
     {1, 0x10, I2C_ADDR_16, 0x0000, "imx219"},  // imx219 for x3-pi
     {2, 0x10, I2C_ADDR_16, 0x0000, "imx219"},  // imx219 for x3-pi
+    {3, 0x10, I2C_ADDR_16, 0x0000, "imx219"},  // imx219 for x3-pi
     {1, 0x1a, I2C_ADDR_16, 0x0200, "imx477"},  // imx477 for x3-pi
     {2, 0x1a, I2C_ADDR_16, 0x0200, "imx477"},  // imx477 for x3-pi
+    {3, 0x1a, I2C_ADDR_16, 0x0200, "imx477"},  // imx477 for x3-pi
     {1, 0x36, I2C_ADDR_16, 0x300A, "ov5647"},  // ov5647 for x3-pi
     {2, 0x36, I2C_ADDR_16, 0x300A, "ov5647"},  // ov5647 for x3-pi
+    {3, 0x36, I2C_ADDR_16, 0x300A, "ov5647"},  // ov5647 for x3-pi
     {2, 0x1a, I2C_ADDR_16, 0x0000, "imx586"},  // imx586
     {1, 0x1a, I2C_ADDR_16, 0x0000, "imx586"},  // imx586
     {2, 0x29, I2C_ADDR_16, 0x0000, "gc4c33"},  // gc4c33
