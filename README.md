@@ -1,12 +1,11 @@
 # 功能介绍
-MIPI（移动行业处理器接口）是Mobile Industry Processor Interface的缩写，针对摄像头、显示屏、射频/基带等接口进行了标准化定义，从而减少终端设备的复杂度、增加设计的灵活性。
 
-该Node提供的主要功能是基于RDK套件MIPI接口的摄像头驱动，可以轻松抓取MIPI相机的视频流数据，并且发布ROS标准的图像数据，供其他Node订阅。除此之外，该Node还支持发布共享内存形式的图像数据，提高RDK端侧图像传输的效率。
-
+MIPI相机驱动，对MIPI接口摄像头进行配置并将采集的图像数据以ROS标准图像消息或者零拷贝图像消息进行发布，供需要使用图像数据的其他模块订阅。
 
 
+# 物料清单
 
-# 支持相机
+当前已支持以下MIPI摄像头
 
 | 序号 | 名称   | 示意图片                    | 参数     | 参考链接                                                     |
 | ---- | ------ | --------------------------- | -------- | ------------------------------------------------------------ |
@@ -23,10 +22,9 @@ MIPI（移动行业处理器接口）是Mobile Industry Processor Interface的�
 在RDK系统的终端中运行如下指令，即可快速安装：
 
 ```bash
+sudo apt update
 sudo apt install -y tros-mipi-cam
 ```
-
-
 
 ## 启动相机
 
@@ -36,6 +34,8 @@ sudo apt install -y tros-mipi-cam
 source /opt/tros/setup.bash
 ros2 run mipi_cam mipi_cam
 ```
+
+默认输出1920*1080分辨率BGR8图像，发布的话题名称为/image_raw
 
 ![mipi_run](image/mipi_run.png)
 
@@ -47,8 +47,6 @@ ros2 run mipi_cam mipi_cam
 source /opt/tros/setup.bash
 ros2 run mipi_cam mipi_cam --ros-args -p image_width:=960 -p image_height:=540
 ```
-
-
 
 ### 调整编码方式
 
@@ -75,7 +73,6 @@ ros2 run mipi_cam mipi_cam --ros-args -p io_method:=shared_mem
 基于共享内存的方式只适用于RDK单板卡内部使用，无法用于分布式传输。
 
 
-
 ### 设置标定文件
 
 使用 camera_calibration_file_path 参数设置相机标定文件路径，此处以使用GC4663相机并读取config文件下的GC4663_calibration.yaml为例(打印信息见下方Attention)：
@@ -85,7 +82,6 @@ ros2 run mipi_cam mipi_cam --ros-args -p io_method:=shared_mem
 source /opt/tros/setup.bash
 ros2 run mipi_cam mipi_cam --ros-args -p camera_calibration_file_path:=./config/GC4663_calibration.yaml -p video_device:=GC4663
 ```
-
 
 
 ## 图像可视化
@@ -100,7 +96,7 @@ ros2 run rqt_image_view rqt_image_view
 
 
 
-## 图像压缩
+## 跨设备图像传输
 
 以上相机驱动后发布的图像数据均为未经压缩的原始图像，相对资源消耗较多，如需使用图像压缩，可使用ROS中的image_transport_plugins实现，使用前需要先进行安装：
 
