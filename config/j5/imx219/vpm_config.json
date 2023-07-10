@@ -22,7 +22,7 @@
 			"isp_stream_output_format": 0,
 			"isp_dma_output_format": 11,
 			"calib_mode": 1,
-			"calib_lname": "./lib/mipi_cam/config/imx219/lib_imx219_linear.so",
+			"calib_lname": "/system/etc/cam/lib_imx219_linear.so",
 			"isp_algo_state": 1
 		},
 		"pym": {
