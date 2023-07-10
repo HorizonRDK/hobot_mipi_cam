@@ -1,5 +1,10 @@
 # Changelog for package mipi_cam
 
+tros_2.1.0 (2023-07-10)
+------------------
+1. 重构hobot_mipi_cam框架
+2. 增加J5平台的支持
+
 tros_2.0.0 (2023-05-11)
 ------------------
 1. 更新package.xml，支持应用独立打包
