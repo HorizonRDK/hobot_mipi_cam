@@ -13,6 +13,7 @@
 # limitations under the License.
 
 cmake_minimum_required(VERSION 3.5)
+cmake_policy(SET CMP0077 NEW)
 project(mipi_cam)
 
 # Default to C++14
@@ -39,46 +40,78 @@ find_package(rclcpp REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(yaml_cpp_vendor REQUIRED)
 
+#set(PREFIX_PATH x3)
+
+if(PLATFORM_X3)
+  message("build platform X3")
+  add_definitions(-DPLATFORM_X3)
+  set(PREFIX_PATH x3)
+  set(SRC_PLATFORM_FILE 
+    src/x3/x3_sdk_swap/src/x3_sdk_wrap.cpp
+    src/x3/x3_sdk_swap/src/x3_vio_bind.cpp
+    src/x3/x3_sdk_swap/src/x3_vio_vin.cpp
+    src/x3/x3_sdk_swap/src/x3_vio_vps.cpp
+    src/x3/x3_sdk_swap/src/x3_vio_vp.cpp
+    src/x3/sensor/sensor_f37_config.c
+    src/x3/sensor/sensor_gc4c33_config.c
+    src/x3/sensor/sensor_gc4663_config.c
+    src/x3/sensor/sensor_imx415_config.c
+    src/x3/sensor/sensor_imx586_config.c
+    src/x3/sensor/sensor_imx219_config.c
+    src/x3/sensor/sensor_imx477_config.c
+    src/x3/sensor/sensor_ov5647_config.c
+    src/x3/sensor/x3_preparam.c
+  )
+  include_directories(include 
+    src/x3/x3_sdk_swap/include
+    src/x3/sensor
+  )
+elseif(PLATFORM_J5)
+  message("build platform J5")
+  add_definitions(-DPLATFORM_J5)
+  set(PREFIX_PATH j5)
+else()
+  message("invalid platform, build platform X3 default")
+  add_definitions(-DPLATFORM_X3)
+  set(PREFIX_PATH x3)
+endif()
+
+message("PREFIX_PATH: ${PREFIX_PATH}")
+
 include_directories(include
-  src/x3
-  src/x3_sdk_swap/include
+  include/${PREFIX_PATH}
+  ${PROJECT_SOURCE_DIR}
+  ${CMAKE_SYSROOT}/usr/
+  ${CMAKE_SYSROOT}/usr/include
+  ../../hobot_perception/mot/deps/jsoncpp/include/
 )
 
 link_directories(
-  ${CMAKE_SYSROOT}/usr/lib/hbmedia/
+  ${CMAKE_SYSROOT}/usr/lib
+  ${CMAKE_SYSROOT}/usr/lib/hbmedia
+  ${CMAKE_SYSROOT}/usr/lib/system/lib
+  ../../hobot_perception/mot/deps/jsoncpp/lib
 )
 
-## Build the mipi camera library
 add_executable(${PROJECT_NAME}
   src/camera.cpp
-  src/mipi_cam_node.cpp
-  src/mipi_cam.cpp
-  src/mipi_cap.cpp
-#  src/x3/*.c
-  src/x3/sensor_f37_config.c
-  src/x3/sensor_imx415_config.c
-  src/x3/sensor_gc4663_config.c
-  src/x3/sensor_imx586_config.c
-  src/x3/sensor_gc4c33_config.c
-  src/x3/sensor_imx219_config.c
-  src/x3/sensor_imx477_config.c
-  src/x3/sensor_ov5647_config.c
-  src/x3/x3_preparam.c
-  src/x3/x3_utils.c
-  src/x3_sdk_swap/src/x3_sdk_wrap.c
-  src/x3_sdk_swap/src/x3_vio_bind.c
-  src/x3_sdk_swap/src/x3_vio_rgn.c
-  src/x3_sdk_swap/src/x3_vio_utils.c
-  src/x3_sdk_swap/src/x3_vio_vdec.c
-  src/x3_sdk_swap/src/x3_vio_vin.c
-  src/x3_sdk_swap/src/x3_vio_vot.c
-  src/x3_sdk_swap/src/x3_vio_vps.c
-  src/x3_sdk_swap/src/x3_vio_venc.cpp
-  src/x3_sdk_swap/src/x3_vio_vp.cpp
+  src/hobot_mipi_node.cpp
+  src/hobot_mipi_cam.cpp
+  src/${PREFIX_PATH}/hobot_mipi_cap_iml.cpp
+  src/${PREFIX_PATH}/hobot_mipi_factory.cpp
+  ${SRC_PLATFORM_FILE}
 )
 
-set(BASE_LIBRARIES pthread vio cam dl)
-set(X3_HAPI_LIB isp_algo z hbmedia isp ion multimedia iar tinyalsa cjson diag gdcbin)
+set(BASE_LIBRARIES pthread vio dl)
+if(PLATFORM_X3)
+  set(X3_HAPI_LIB isp_algo z hbmedia isp ion multimedia iar tinyalsa cjson diag gdcbin)
+elseif(PLATFORM_J5)
+  set(X3_HAPI_LIB jsoncpp hb_api_isp vpm vio_client)
+else()
+  set(BASE_LIBRARIES pthread vio cam dl)
+  set(X3_HAPI_LIB isp_algo z hbmedia isp ion multimedia iar tinyalsa cjson diag gdcbin)
+endif()
+
 
 target_link_libraries(${PROJECT_NAME}
   ${BASE_LIBRARIES} ${X3_HAPI_LIB} yaml-cpp
@@ -92,7 +125,7 @@ ament_target_dependencies(
   )
 
 if(BUILD_HBMEM)
-target_link_libraries(${PROJECT_NAME}
+  target_link_libraries(${PROJECT_NAME}
   hbmem
 )
 ament_target_dependencies(
@@ -108,10 +141,18 @@ install(
   RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
 
-install(DIRECTORY
-  ${PROJECT_SOURCE_DIR}/config/
+if(PLATFORM_X3)
+  install(DIRECTORY
+    ${PROJECT_SOURCE_DIR}/config/x3/
+    DESTINATION lib/${PROJECT_NAME}/config/
+  )
+elseif(PLATFORM_J5)
+  install(DIRECTORY
+    ${PROJECT_SOURCE_DIR}/config/j5/
   DESTINATION lib/${PROJECT_NAME}/config/
 )
+endif()
+
 
 install(DIRECTORY
   launch
