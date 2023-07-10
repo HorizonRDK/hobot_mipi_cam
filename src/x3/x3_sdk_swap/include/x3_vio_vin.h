@@ -13,6 +13,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
+#include "vio/hb_isp_api.h"
 int x3_vin_init(x3_vin_info_t *vin_info);
 int x3_vin_start(x3_vin_info_t *vin_info);
 void x3_vin_stop(x3_vin_info_t *vin_info);

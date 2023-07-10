@@ -56,7 +56,7 @@ class HobotMipiCapIml : public HobotMipiCap {
 
   // 如果有 vps ，就 输出vps 的分层数据
   int getFrame(int nChnID, int* nVOutW, int* nVOutH,
-               void* buf, unsigned int bufsize, unsigned int*);
+        void* buf, unsigned int bufsize, unsigned int*, uint64_t&);
 
   int parseConfig(std::string sensor_name, int w, int h, int fps);
 
@@ -64,6 +64,11 @@ class HobotMipiCapIml : public HobotMipiCap {
   // 输入参数：pipeline_idx pipeline的group ID。
   // 返回值：true，已经打开；false，没有打开。
   bool checkPipelineOpened(int pipeline_idx);
+
+  // 获取cap的info信息；
+  // 输入输出参数：MIPI_CAP_INFO_ST的结构信息。
+  // 返回值：0，初始化成功；-1，初始化失败。
+  int getCapInfo(MIPI_CAP_INFO_ST &info);
 
  protected:
   virtual int getSensorBus(std::string &sensor_name);
@@ -75,6 +80,7 @@ class HobotMipiCapIml : public HobotMipiCap {
   x3_vps_infos_t vps_infos_;  // vps的配置，支持多个vps group
   int vin_enable_ = true;
   int vps_enable_ = true;
+  MIPI_CAP_INFO_ST cap_info_;
 };
 
 class HobotMipiCapImlX3pi : public HobotMipiCapIml {

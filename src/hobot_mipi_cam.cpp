@@ -157,6 +157,11 @@ int MipiCamIml::init(struct NodePara &para) {
   cap_info.height = nodePare_.image_height_;
   cap_info.fps = nodePare_.framerate_;
 
+  RCLCPP_INFO(rclcpp::get_logger("mipi_cam"),
+    "[%s]->nodePare_.video_device_name_: %s\r\n", __func__, nodePare_.video_device_name_.c_str());
+  RCLCPP_INFO(rclcpp::get_logger("mipi_cam"),
+    "[%s]->cap_info.sensor_typep--111: %s\r\n", __func__, cap_info.sensor_type.c_str());
+
   mipiCap_ptr_->initEnv(nodePare_.video_device_name_);
   if (nodePare_.video_device_name_.length() == 0) {
     bool detect_device = false;
@@ -169,14 +174,18 @@ int MipiCamIml::init(struct NodePara &para) {
         return -2;
     }
     cap_info.sensor_type = mipicap_v[0];
+    RCLCPP_INFO(rclcpp::get_logger("mipi_cam"),
+    "[%s]->mipicap_v[0]: %s\r\n", __func__, mipicap_v[0].c_str());
   }
+  RCLCPP_INFO(rclcpp::get_logger("mipi_cam"),
+    "[%s]->cap_info.sensor_typep: %s\r\n", __func__, cap_info.sensor_type.c_str());
   if (mipiCap_ptr_->init(cap_info) != 0) {
     RCLCPP_ERROR(rclcpp::get_logger("mipi_cam"),
       "[%s]->cap capture init failture.\r\n", __func__);
     return -5;
   }
   RCLCPP_INFO(rclcpp::get_logger("mipi_cam"),
-    "[%s]->cap %s init success.\r\n", __func__, nodePare_.video_device_name_);
+    "[%s]->cap %s init success.\r\n", __func__, nodePare_.video_device_name_.c_str());
   lsInit_ = true;
   return 0;
 }
@@ -252,19 +261,22 @@ bool MipiCamIml::getImage(builtin_interfaces::msg::Time &stamp,
   int data_size = nodePare_.image_width_ * nodePare_.image_height_ * 1.5;
 
   data.resize(data_size);  // step * height);
-
+  uint64_t timestamp;
   if (mipiCap_ptr_->getFrame(
           2,
           reinterpret_cast<int *>(&width),
           reinterpret_cast<int *>(&height),
           reinterpret_cast<void *>(&data[0]),
           data_size,
-          reinterpret_cast<unsigned int *>(&data_size)))
+          reinterpret_cast<unsigned int *>(&data_size),
+          timestamp))
     return false;
   encoding = "nv12";
-  clock_gettime(CLOCK_REALTIME, &time_start);
-  stamp.sec = time_start.tv_sec;
-  stamp.nanosec = time_start.tv_nsec;
+  //clock_gettime(CLOCK_REALTIME, &time_start);
+  //stamp.sec = time_start.tv_sec;
+  //stamp.nanosec = time_start.tv_nsec;
+  stamp.sec = timestamp / 1e9;
+  stamp.nanosec = timestamp - stamp.sec * 1e9;
   step = width;
   {
     struct timespec ts;
@@ -313,18 +325,22 @@ bool MipiCamIml::getImageMem(
     clock_gettime(CLOCK_MONOTONIC, &ts);
     msStart = (ts.tv_sec * 1000 + ts.tv_nsec / 1000000);
   }
+  uint64_t timestamp;
   if (mipiCap_ptr_->getFrame(
           2,
           reinterpret_cast<int *>(&width),
           reinterpret_cast<int *>(&height),
           reinterpret_cast<void *>(data.data()),
           6220800,
-          reinterpret_cast<unsigned int *>(&data_size)))
+          reinterpret_cast<unsigned int *>(&data_size),
+          timestamp))
     return false;
   memcpy(encoding.data(), "nv12", strlen("nv12"));
-  clock_gettime(CLOCK_REALTIME, &time_start);
-  stamp.sec = time_start.tv_sec;
-  stamp.nanosec = time_start.tv_nsec;
+  //clock_gettime(CLOCK_REALTIME, &time_start);
+  //stamp.sec = time_start.tv_sec;
+  //stamp.nanosec = time_start.tv_nsec;
+  stamp.sec = timestamp / 1e9;
+  stamp.nanosec = timestamp - stamp.sec * 1e9;
   step = width;
   {
     struct timespec ts;
@@ -344,14 +360,21 @@ bool MipiCamIml::getImageMem(
 
 bool MipiCamIml::getCamCalibration(sensor_msgs::msg::CameraInfo &cam_info,
                                   const std::string &file_path) {
+
   try {
+    std::string cal_file = file_path;
+    //if (file_path == "") {
+   //   MIPI_CAP_INFO_ST cap_info;
+   //   mipiCap_ptr_->getCapInfo(cap_info);
+    //  cal_file = cap_info.config_path + "/" + cap_info.sensor_type + "_calibration.yaml";
+    //}
     std::string camera_name;
-    std::ifstream fin(file_path.c_str());
+    std::ifstream fin(cal_file.c_str());
     if (!fin) {
      RCLCPP_ERROR(rclcpp::get_logger("mipi_cam"),
           "Camera calibration file: %s not exist! Please make sure the "
           "calibration file path is correct and the calibration file exists!",
-          file_path.c_str());
+          cal_file.c_str());
       return false;
     }
     YAML::Node calibration_doc = YAML::Load(fin);

@@ -42,7 +42,7 @@ int HobotMipiCapIml::initEnv(std::string sensor) {
 
 int HobotMipiCapIml::init(MIPI_CAP_INFO_ST &info) {
   int ret = 0;
-
+  memcpy(&cap_info_, &info, sizeof(MIPI_CAP_INFO_ST));
   parseConfig(info.sensor_type, info.width, info.height, info.fps);
   int pipeline_id = 0;
   for (; pipeline_id < 8; pipeline_id++) {
@@ -111,6 +111,7 @@ int HobotMipiCapIml::init(MIPI_CAP_INFO_ST &info) {
       goto vps_bind_err;
     }
   }
+  HB_ISP_GetSetInit();
   RCLCPP_INFO(rclcpp::get_logger("mipi_cam"),
     "x3 camera init success.\n");
   std::cout << "HobotMipiCapIml::init,ret:" << ret << std::endl;
@@ -150,6 +151,7 @@ int HobotMipiCapIml::deInit() {
     x3_vin_deinit(&vin_info_);
   }
   x3_vp_deinit();
+  HB_ISP_GetSetExit();
   return 0;
 }
 
@@ -214,7 +216,8 @@ std::vector<std::string> HobotMipiCapIml::listSensor() {
 }
 
 int HobotMipiCapIml::getFrame(int nChnID, int* nVOutW, int* nVOutH,
-        void* frame_buf, unsigned int bufsize, unsigned int* len) {
+        void* frame_buf, unsigned int bufsize, unsigned int* len,
+        uint64_t &timestamp) {
   int size = -1, ret = 0;
   struct timeval select_timeout = {0};
   hb_vio_buffer_t vOut;
@@ -261,6 +264,7 @@ int HobotMipiCapIml::getFrame(int nChnID, int* nVOutW, int* nVOutH,
       usleep(10 * 1000);
       continue;
     }
+    timestamp = vOut.img_info.tv.tv_sec * 1e9 + vOut.img_info.tv.tv_usec * 1e3;
     size = vOut.img_addr.stride_size * vOut.img_addr.height;
     stride = vOut.img_addr.stride_size;
     width = vOut.img_addr.width;
@@ -272,6 +276,13 @@ int HobotMipiCapIml::getFrame(int nChnID, int* nVOutW, int* nVOutH,
       RCLCPP_ERROR(rclcpp::get_logger("mipi_cam"),
         "buf size(%d) < frame size(%d)", bufsize, *len);
       return -1;
+    }
+    ISP_AE_PARAM_S stAeParam;
+    stAeParam.GainOpType = static_cast<ISP_OP_TYPE_E>(0);
+    stAeParam.IntegrationOpType = static_cast<ISP_OP_TYPE_E>(0);
+    ret = HB_ISP_GetAeParam(vin_info_.pipe_id, &stAeParam);
+    if (ret == 0) {
+      timestamp += stAeParam.u32IntegrationTime / 2 * 1e3;
     }
     if (stride == width) {
       memcpy(frame_buf, vOut.img_addr.addr[0], width * height);
@@ -331,7 +342,7 @@ int HobotMipiCapIml::parseConfig(std::string sensor_name,
     ov5647_linear_vin_param_init(&vin_info_);
   } else {
     RCLCPP_ERROR(rclcpp::get_logger("mipi_cam"),
-      "[%s]->sensor name not found(%s).\n", __func__, sensor_name);
+      "[%s]->sensor name not found(%s).\n", __func__, sensor_name.c_str());
     // m_oX3UsbCam.m_infos.m_vin_enable = 0;
     return -1;
   }
@@ -377,6 +388,12 @@ bool HobotMipiCapIml::checkPipelineOpened(int pipeline_idx) {
   }
   return true;
 }
+
+int HobotMipiCapIml::getCapInfo(MIPI_CAP_INFO_ST &info) {
+  int ret = 0;
+  memcpy(&info, &cap_info_, sizeof(MIPI_CAP_INFO_ST));
+}
+
 
 int HobotMipiCapIml::resetSensor(std::string sensor) {
   RCLCPP_WARN(rclcpp::get_logger("mipi_cam"), "HobotMipiCapIml::resetSensor");
@@ -465,6 +482,7 @@ std::vector<std::string> HobotMipiCapImlX3pi::listSensor() {
     exec_cmd_ex(cmd, result, sizeof(result));
     if (strstr(result, "Error") == NULL && strstr(result, "error") == NULL) {
       // 返回结果中不带Error, 说明sensor找到了
+      RCLCPP_INFO(rclcpp::get_logger("mipi_cam"), "push sensor::%s", sensor_id_list_x3pi[i].sensor_name);
       device.push_back(sensor_id_list_x3pi[i].sensor_name);
     }
   }

@@ -34,6 +34,7 @@ int HobotMipiCapIml::UpdateConfig(MIPI_CAP_INFO_ST &info) {
       "sensor_name : %s.\n", info.sensor_type.c_str());
   RCLCPP_INFO(rclcpp::get_logger("mipi_cam"),
       "config_path : %s.\n", info.config_path.c_str());
+  memcpy(&cap_info_, &info, sizeof(MIPI_CAP_INFO_ST));
   if ((info.sensor_type == "AR0820") || (info.sensor_type == "ar0820")) {
     vio_cfg_file_ = info.config_path + "/ar0820_cim_isp0_4k/vpm_config.json";
     cam_cfg_file_ = info.config_path + "/ar0820_cim_isp0_4k//hb_j5dev.json";
@@ -251,7 +252,8 @@ std::vector<std::string> HobotMipiCapIml::listSensor() {
 }
 
 int HobotMipiCapIml::getFrame(int nChnID, int* nVOutW, int* nVOutH,
-        void* frame_buf, unsigned int bufsize, unsigned int* len) {
+        void* frame_buf, unsigned int bufsize, unsigned int* len,
+        uint64_t &timestamp) {
   int size = -1, ret = 0;
   struct timeval select_timeout = {0};
   pym_buffer_v2_t pym_buf;
@@ -279,6 +281,8 @@ int HobotMipiCapIml::getFrame(int nChnID, int* nVOutW, int* nVOutH,
       usleep(10 * 1000);
       continue;
     }
+    timestamp = pym_buf.pym_img_info.tv.tv_sec * 1e9
+              + pym_buf.pym_img_info.tv.tv_usec * 1e3;
     address_info_t *pym_addr;
     if (use_ds_roi_) {
       pym_addr = &pym_buf.ds_roi[ds_pym_layer_];
@@ -333,6 +337,8 @@ int HobotMipiCapIml::getFrame(int nChnID, int* nVOutW, int* nVOutH,
       usleep(10 * 1000);
       continue;
     }
+    timestamp = pym_common_buf.pym_img_info.tv.tv_sec * 1e9
+                + pym_common_buf.pym_img_info.tv.tv_usec * 1e3;
     address_info_t *pym_info = &(pym_common_buf.pym[0]);
     stride = pym_info->stride_size;
     width = pym_info->width;
@@ -376,6 +382,7 @@ int HobotMipiCapIml::getFrame(int nChnID, int* nVOutW, int* nVOutH,
       usleep(10 * 1000);
       continue;
     }
+    timestamp = isp_buf.img_info.tv.tv_sec * 1e9 + isp_buf.img_info.tv.tv_usec * 1e3;
     stride = isp_buf.img_addr.stride_size;
     width = isp_buf.img_addr.width;
     height = isp_buf.img_addr.height;
@@ -461,6 +468,11 @@ bool HobotMipiCapIml::checkPipelineOpened(int pipeline_idx) {
 int HobotMipiCapIml::resetSensor(std::string sensor) {
   RCLCPP_WARN(rclcpp::get_logger("mipi_cam"), "HobotMipiCapIml::resetSensor");
   return 0;
+}
+
+int HobotMipiCapIml::getCapInfo(MIPI_CAP_INFO_ST &info) {
+  int ret = 0;
+  memcpy(&info, &cap_info_, sizeof(MIPI_CAP_INFO_ST));
 }
 
 int HobotMipiCapImlRDKJ5::initEnv(std::string sensor) {

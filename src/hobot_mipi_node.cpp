@@ -56,7 +56,7 @@ void MipiCamNode::getParams() {
   this->declare_parameter("out_format", "bgr8");   // nv12
   this->declare_parameter("video_device", "");  // "IMX415");//"F37");
   this->declare_parameter("camera_calibration_file_path",
-                          "");
+                          "/opt/tros/lib/mipi_cam/config/F37_calibration.yaml");
   auto parameters_client = std::make_shared<rclcpp::SyncParametersClient>(this);
   for (auto& parameter :
        parameters_client->get_parameters({"config_path",
@@ -101,10 +101,10 @@ void MipiCamNode::getParams() {
     } else if (parameter.get_name() == "io_method") {
       io_method_name_ = parameter.value_to_string();
     } else if (parameter.get_name() == "video_device") {
+      nodePare_.video_device_name_ = parameter.value_to_string();
       RCLCPP_INFO(rclcpp::get_logger("mipi_node"),
                   "video_device value: %s",
                   parameter.value_to_string().c_str());
-      nodePare_.video_device_name_ = parameter.value_to_string();
     } else if (parameter.get_name() == "camera_calibration_file_path") {
       nodePare_.camera_calibration_file_path_ = parameter.value_to_string();
     } else {
