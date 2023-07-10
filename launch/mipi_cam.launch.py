@@ -25,36 +25,36 @@ def generate_launch_description():
     config_path = os.path.join(
         get_package_prefix('mipi_cam'),
         'lib/mipi_cam/config')
-    config_path_launch_arg = DeclareLaunchArgument(
-        "config_path", default_value=TextSubstitution(text="")
-    )
-    DeclareLaunchArgument(
-        'mipi_camera_calibration_file_path',
-        default_value='/opt/tros/lib/mipi_cam/config/F37_calibration.yaml',
-        description='mipi camera calibration file path'),
-    DeclareLaunchArgument(
-        'mipi_out_format',
-        default_value='nv12',
-        description='mipi camera out format'),
-    DeclareLaunchArgument(
-        'mipi_image_width',
-        default_value='1920',
-        description='mipi camera out image width'),
-    DeclareLaunchArgument(
-        'mipi_image_height',
-        default_value='1080',
-        description='mipi camera out image height'),
-    DeclareLaunchArgument(
-        'mipi_io_method',
-        default_value='shared_mem',
-        description='mipi camera out io_method'),
-    DeclareLaunchArgument(
-        'mipi_video_device',
-        default_value='',
-        description='mipi camera device'),
     
     return LaunchDescription([
-        config_path_launch_arg,
+        DeclareLaunchArgument(
+            "config_path", 
+            default_value=TextSubstitution(text=""),
+            description='mipi camera calibration file path'),
+        DeclareLaunchArgument(
+            'mipi_camera_calibration_file_path',
+            default_value='/opt/tros/lib/mipi_cam/config/F37_calibration.yaml',
+            description='mipi camera calibration file path'),
+        DeclareLaunchArgument(
+            'mipi_out_format',
+            default_value='nv12',
+            description='mipi camera out format'),
+        DeclareLaunchArgument(
+            'mipi_image_width',
+            default_value='1920',
+            description='mipi camera out image width'),
+        DeclareLaunchArgument(
+            'mipi_image_height',
+            default_value='1080',
+            description='mipi camera out image height'),
+        DeclareLaunchArgument(
+            'mipi_io_method',
+            default_value='shared_mem',
+            description='mipi camera out io_method'),
+        DeclareLaunchArgument(
+            'mipi_video_device',
+            default_value='all',
+            description='mipi camera device'),
         # 启动图片发布pkg
         Node(
             package='mipi_cam',

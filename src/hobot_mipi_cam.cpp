@@ -163,7 +163,9 @@ int MipiCamIml::init(struct NodePara &para) {
     "[%s]->cap_info.sensor_typep--111: %s\r\n", __func__, cap_info.sensor_type.c_str());
 
   mipiCap_ptr_->initEnv(nodePare_.video_device_name_);
-  if (nodePare_.video_device_name_.length() == 0) {
+  if (nodePare_.video_device_name_.length() == 0
+      || nodePare_.video_device_name_ == "all"
+      || nodePare_.video_device_name_ == "ALL") {
     bool detect_device = false;
     auto mipicap_v = mipiCap_ptr_->listSensor();
     if (mipicap_v.size() <= 0) {
