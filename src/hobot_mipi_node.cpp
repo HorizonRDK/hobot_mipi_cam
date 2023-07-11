@@ -45,7 +45,7 @@ MipiCamNode::~MipiCamNode() {
 
 void MipiCamNode::getParams() {
   // declare params
-  this->declare_parameter("config_path", "./lib/mipi_cam/config");
+  this->declare_parameter("config_path", "./config/");
   this->declare_parameter("channel", 0);
   this->declare_parameter("camera_info_url", "");
   this->declare_parameter("framerate", 30.0);  // 10.0);

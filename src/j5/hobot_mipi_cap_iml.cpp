@@ -45,13 +45,13 @@ int HobotMipiCapIml::UpdateConfig(MIPI_CAP_INFO_ST &info) {
     cam_cfg_index_ = 0;
   } else {
     RCLCPP_ERROR(rclcpp::get_logger("mipi_cam"),
-      "[%s]->sensor name not found(%s).\n", __func__, info.sensor_type);
+      "[%s]->sensor name not found(%s).\n", __func__, info.sensor_type.c_str());
     return -1;
   }
   std::ifstream cam_file(vio_cfg_file_);
   if (!cam_file.is_open()) {
     RCLCPP_ERROR(rclcpp::get_logger("mipi_cam"),
-      "[%s]->open file error (%s).\n", __func__, vio_cfg_file_);
+      "[%s]->open file error (%s).\n", __func__, vio_cfg_file_.c_str());
     return -1;
   }
   Json::Value root;

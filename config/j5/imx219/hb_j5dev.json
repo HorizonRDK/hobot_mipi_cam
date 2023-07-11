@@ -15,8 +15,8 @@
                 "fps":30,
                 "resolution":1080,
                 "dev_port":0,
-                "data_path": "./lib/mipi_cam/config/imx219/cim_raw10_1080p.json",
-                "config_path":"./lib/mipi_cam/config/imx219/hb_mipi_imx219_raw10_%dfps_%dP.json"
+                "data_path": "./config/imx219/cim_raw10_1080p.json",
+                "config_path":"./config/imx219/hb_mipi_imx219_raw10_%dfps_%dP.json"
             }
         }
     }

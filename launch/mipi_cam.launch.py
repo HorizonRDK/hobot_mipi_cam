@@ -61,8 +61,7 @@ def generate_launch_description():
             executable='mipi_cam',
             output='screen',
             parameters=[
-                {"config_path": [config_path, "/",
-                                  LaunchConfiguration('config_path')]},
+                {"config_path": "./config/"},
                 {"camera_calibration_file_path": LaunchConfiguration(
                     'mipi_camera_calibration_file_path')},
                 {"out_format": LaunchConfiguration('mipi_out_format')},
