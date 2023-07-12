@@ -38,7 +38,7 @@ def generate_launch_description():
             description='mipi camera out image height'),
         DeclareLaunchArgument(
             'mipi_io_method',
-            default_value='shared_mem',
+            default_value='ros',
             description='mipi camera out io_method'),
         DeclareLaunchArgument(
             'mipi_video_device',
