@@ -1,0 +1,263 @@
+{
+	"pipeline0": {
+		"isp": {
+			"hw_id":0,
+			"ctx_id": 0,
+			"sched_mode":1,
+			"hdr_mode": 0,
+			"width": 1920,
+			"height": 1080,
+			"frame_rate": 30,
+			"enable_pattern": 0,
+			"input_crop_enable": 0,
+			"input_crop_x": 0,
+			"input_crop_y": 0,
+			"input_crop_width": 0,
+			"input_crop_height": 0,
+			"output_crop_enable": 0,
+			"output_crop_x": 0,
+			"output_crop_y": 0,
+			"output_crop_width": 0,
+			"output_crop_height": 0,
+			"isp_stream_output_format": 0,
+			"isp_dma_output_format": 11,
+			"calib_mode": 1,
+			"calib_lname": "/system/etc/cam/lib_imx219_linear.so",
+			"isp_algo_state": 1
+		},
+		"pym": {
+			"pym_config": {
+				"pym_hw_id": 0,
+				"pym_mode": 4,
+				"output_buf_num": 6,
+				"time_out": 2000,
+				"y_hor_coeff4": 0,
+				"y_hor_coeff3": 1,
+				"y_hor_coeff2": 1,
+				"y_hor_coeff1": 0,
+				"y_hor_coeff0": 0,
+				"y_ver_coeff4": 0,
+				"y_ver_coeff3": 1,
+				"y_ver_coeff2": 1,
+				"y_ver_coeff1": 0,
+				"y_ver_coeff0": 0,
+				"c_hor_coeff4": 0,
+				"c_hor_coeff3": 1,
+				"c_hor_coeff2": 1,
+				"c_hor_coeff1": 0,
+				"c_hor_coeff0": 0,
+				"c_ver_coeff4": 0,
+				"c_ver_coeff3": 1,
+				"c_ver_coeff2": 1,
+				"c_ver_coeff1": 0,
+				"c_ver_coeff0": 0,
+				"y_right_shift": 2,
+				"c_right_shift": 2
+			},
+			"pym_ctrl": {
+				"source_en": 1,
+				"src_uv_bypass": 0,
+				"src_in_width": 1920,
+				"src_in_height": 1080,
+				"src_in_stride_y": 1920,
+				"src_in_stride_uv": 1920,
+				"src_start_top": 0,
+				"src_start_left": 0,
+				"src_region_width": 1920,
+				"src_region_height": 1080,
+				"src_out_stride_y": 1920,
+				"src_out_stride_uv": 1920,
+				"suffix_hb_val": 68,
+				"prefix_hb_val": 2,
+				"suffix_vb_val": 20,
+				"prefix_vb_val": 2,
+				"pixel_num_before_sol": 16,
+				"gs_max_layer_en": 5,
+				"gs_en": 1,
+				"gs_uv_bypass": 0,
+				"gauss_info": [
+				{
+					"gs_start_top": 0,
+					"gs_start_left": 0,
+					"gs_region_width": 960,
+					"gs_region_height": 540,
+					"gs_stride_y": 960,
+					"gs_stride_uv": 960
+				},
+				{
+					"gs_start_top": 0,
+					"gs_start_left": 0,
+					"gs_region_width": 480,
+					"gs_region_height": 270,
+					"gs_stride_y": 480,
+					"gs_stride_uv": 480
+				},
+				{
+					"gs_start_top": 0,
+					"gs_start_left": 0,
+					"gs_region_width": 240,
+					"gs_region_height": 134,
+					"gs_stride_y": 240,
+					"gs_stride_uv": 240
+				},
+				{
+					"gs_start_top": 0,
+					"gs_start_left": 0,
+					"gs_region_width": 120,
+					"gs_region_height": 64,
+					"gs_stride_y": 120,
+					"gs_stride_uv": 120
+				},
+				{
+					"gs_start_top": 0,
+					"gs_start_left": 0,
+					"gs_region_width": 0,
+					"gs_region_height": 0,
+					"gs_stride_y": 0,
+					"gs_stride_uv": 0
+				}
+				],
+				"bl_max_layer_en": 5,
+				"bl_en": 1,
+				"bl_uv_bypass": 0,
+				"bilinear_info": [
+				{
+					"bl_start_top": 0,
+					"bl_start_left": 0,
+					"bl_region_width": 960,
+					"bl_region_height": 540,
+					"bl_stride_y": 960,
+					"bl_stride_uv": 960
+				},
+				{
+					"bl_start_top": 0,
+					"bl_start_left": 0,
+					"bl_region_width": 480,
+					"bl_region_height": 270,
+					"bl_stride_y": 480,
+					"bl_stride_uv": 480
+				},
+				{
+					"bl_start_top": 0,
+					"bl_start_left": 0,
+					"bl_region_width": 240,
+					"bl_region_height": 134,
+					"bl_stride_y": 240,
+					"bl_stride_uv": 240
+				},
+				{
+					"bl_start_top": 0,
+					"bl_start_left": 0,
+					"bl_region_width": 120,
+					"bl_region_height": 64,
+					"bl_stride_y": 120,
+					"bl_stride_uv": 120
+				},
+				{
+					"bl_start_top": 0,
+					"bl_start_left": 0,
+					"bl_region_width": 0,
+					"bl_region_height": 0,
+					"bl_stride_y": 0,
+					"bl_stride_uv": 0
+				}
+				],
+				"upscale_roi_en": 0,
+				"us_roi_uv_bypass": 0,
+				"us_roi_start_left": 0,
+				"us_roi_start_top": 0,
+				"us_roi_region_width": 480,
+				"us_roi_region_height": 240,
+				"us_roi_stride_y": 640,
+				"us_roi_stride_uv": 640,
+				"us_roi_out_width": 640,
+				"us_roi_out_height": 480,
+				"ds_roi_en": 1,
+				"ds_roi_uv_bypass": 0,
+				"ds_roi": [
+				{
+					"ds_roi_layer": 0,
+					"ds_roi_sel": 0,
+					"ds_roi_start_top": 0,
+					"ds_roi_start_left": 0,
+					"ds_roi_region_width": 960,
+					"ds_roi_region_height": 540,
+					"ds_roi_stride_y": 960,
+					"ds_roi_stride_uv": 960,
+					"ds_roi_out_width": 960,
+					"ds_roi_out_height": 540
+				},
+				{
+					"ds_roi_layer": 0,
+					"ds_roi_sel": 0,
+					"ds_roi_start_top": 0,
+					"ds_roi_start_left": 0,
+					"ds_roi_region_width": 480,
+					"ds_roi_region_height": 270,
+					"ds_roi_stride_y": 480,
+					"ds_roi_stride_uv": 480,
+					"ds_roi_out_width": 480,
+					"ds_roi_out_height": 270
+				},
+				{
+					"ds_roi_layer": 0,
+					"ds_roi_sel": 0,
+					"ds_roi_start_top": 0,
+					"ds_roi_start_left": 0,
+					"ds_roi_region_width": 240,
+					"ds_roi_region_height": 134,
+					"ds_roi_stride_y": 240,
+					"ds_roi_stride_uv": 240,
+					"ds_roi_out_width": 240,
+					"ds_roi_out_height": 134
+				},
+				{
+					"ds_roi_layer": 0,
+					"ds_roi_sel": 0,
+					"ds_roi_start_top": 0,
+					"ds_roi_start_left": 0,
+					"ds_roi_region_width": 120,
+					"ds_roi_region_height": 64,
+					"ds_roi_stride_y": 120,
+					"ds_roi_stride_uv": 120,
+					"ds_roi_out_width": 120,
+					"ds_roi_out_height": 64
+				},
+				{
+					"ds_roi_layer": 0,
+					"ds_roi_sel": 0,
+					"ds_roi_start_top": 0,
+					"ds_roi_start_left": 0,
+					"ds_roi_region_width": 60,
+					"ds_roi_region_height": 32,
+					"ds_roi_stride_y": 60,
+					"ds_roi_stride_uv": 60,
+					"ds_roi_out_width": 60,
+					"ds_roi_out_height": 32
+				},
+				{
+					"ds_roi_layer": 0,
+					"ds_roi_sel": 0,
+					"ds_roi_start_top": 0,
+					"ds_roi_start_left": 0,
+					"ds_roi_region_width": 0,
+					"ds_roi_region_height": 0,
+					"ds_roi_stride_y": 0,
+					"ds_roi_stride_uv": 0,
+					"ds_roi_out_width": 0,
+					"ds_roi_out_height": 0
+				}
+				],
+				"pre_line_int_0_set": 0,
+				"pre_line_int_1_set": 0,
+				"pre_line_int_2_set": 0,
+				"pre_line_int_3_set": 0,
+				"pre_line_int_4_set": 0,
+				"pre_line_int_5_set": 0,
+				"pre_line_int_6_set": 0,
+				"pre_line_int_7_set": 0
+			}
+		}
+	}
+}
+
