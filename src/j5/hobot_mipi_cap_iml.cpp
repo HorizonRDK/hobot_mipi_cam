@@ -244,7 +244,7 @@ std::vector<std::string> HobotMipiCapIml::listSensor() {
 
 int HobotMipiCapIml::getFrame(int nChnID, int* nVOutW, int* nVOutH,
         void* frame_buf, unsigned int bufsize, unsigned int* len,
-        uint64_t &timestamp) {
+        uint64_t &timestamp, bool gray) {
   int size = -1, ret = 0;
   struct timeval select_timeout = {0};
   pym_buffer_v2_t pym_buf;
@@ -286,7 +286,11 @@ int HobotMipiCapIml::getFrame(int nChnID, int* nVOutW, int* nVOutH,
 
     *nVOutW = width;
     *nVOutH = height;
-    *len = width * height * 3 / 2;
+    if (gray == true) {
+      *len = width * height;
+    } else {
+      *len = width * height * 3 / 2;
+    }
     if (bufsize < *len) {
       hb_vio_free_pymbuf(pipe_id, HB_VIO_PYM_DATA_V2, &pym_buf);
       RCLCPP_ERROR(rclcpp::get_logger("mipi_cam"),
@@ -295,9 +299,11 @@ int HobotMipiCapIml::getFrame(int nChnID, int* nVOutW, int* nVOutH,
     }
     if (stride == width) {
       memcpy(frame_buf, pym_addr->addr[0], width * height);
-      memcpy(frame_buf + width * height,
+      if (gray == false) {
+        memcpy(frame_buf + width * height,
              pym_addr->addr[1],
              width * height / 2);
+      }
     } else {
       // jump over stride - width Y
       for (i = 0; i < height; i++) {
@@ -305,10 +311,12 @@ int HobotMipiCapIml::getFrame(int nChnID, int* nVOutW, int* nVOutH,
           pym_addr->addr[0] + i * stride, width);
       }
       // jump over stride - width UV
-      for (i = 0; i < height / 2; i++) {
-        memcpy(frame_buf + width * height + i * width,
+      if (gray == false) {
+        for (i = 0; i < height / 2; i++) {
+          memcpy(frame_buf + width * height + i * width,
                pym_addr->addr[1] + i * stride,
                width);
+        }
       }
     }
     hb_vio_free_pymbuf(pipeline_idx_, HB_VIO_PYM_DATA_V2, &pym_buf);
@@ -333,7 +341,11 @@ int HobotMipiCapIml::getFrame(int nChnID, int* nVOutW, int* nVOutH,
     height = pym_info->height;
     *nVOutW = width;
     *nVOutH = height;
-    *len = width * height * 3 / 2;
+    if (gray == true) {
+      *len = width * height;
+    } else {
+      *len = width * height * 3 / 2;
+    }
     if (bufsize < *len) {
       hb_vio_free_pymbuf(pipe_id, HB_VIO_PYM_COMMON_DATA, &pym_common_buf);
       RCLCPP_ERROR(rclcpp::get_logger("mipi_cam"),
@@ -342,9 +354,11 @@ int HobotMipiCapIml::getFrame(int nChnID, int* nVOutW, int* nVOutH,
     }
     if (stride == width) {
       memcpy(frame_buf, pym_info->addr[0], width * height);
-      memcpy(frame_buf + width * height,
+      if (gray == false) {
+        memcpy(frame_buf + width * height,
              pym_info->addr[1],
              width * height / 2);
+      }
     } else {
       // jump over stride - width Y
       for (i = 0; i < height; i++) {
@@ -352,10 +366,12 @@ int HobotMipiCapIml::getFrame(int nChnID, int* nVOutW, int* nVOutH,
           pym_info->addr[0] + i * stride, width);
       }
       // jump over stride - width UV
-      for (i = 0; i < height / 2; i++) {
-        memcpy(frame_buf + width * height + i * width,
+      if (gray == false) {
+        for (i = 0; i < height / 2; i++) {
+          memcpy(frame_buf + width * height + i * width,
                pym_info->addr[1] + i * stride,
                width);
+        }
       }
     }
     hb_vio_free_pymbuf(pipeline_idx_, HB_VIO_PYM_COMMON_DATA, &pym_common_buf);
@@ -379,7 +395,11 @@ int HobotMipiCapIml::getFrame(int nChnID, int* nVOutW, int* nVOutH,
     stride = width;
     *nVOutW = width;
     *nVOutH = height;
-    *len = width * height * 3 / 2;
+    if (gray == true) {
+      *len = width * height;
+    } else {
+      *len = width * height * 3 / 2;
+    }
     if (bufsize < *len) {
       hb_vio_free_pymbuf(pipe_id, HB_VIO_ISP_YUV_DATA, &isp_buf);
       RCLCPP_ERROR(rclcpp::get_logger("mipi_cam"),
@@ -388,9 +408,11 @@ int HobotMipiCapIml::getFrame(int nChnID, int* nVOutW, int* nVOutH,
     }
     if (stride == width) {
       memcpy(frame_buf, isp_buf.img_addr.addr[0], width * height);
-      memcpy(frame_buf + width * height,
+      if (gray == false) {
+        memcpy(frame_buf + width * height,
              isp_buf.img_addr.addr[1],
              width * height / 2);
+      }
     } else {
       // jump over stride - width Y
       for (i = 0; i < height; i++) {
@@ -398,10 +420,12 @@ int HobotMipiCapIml::getFrame(int nChnID, int* nVOutW, int* nVOutH,
           isp_buf.img_addr.addr[0] + i * stride, width);
       }
       // jump over stride - width UV
-      for (i = 0; i < height / 2; i++) {
-        memcpy(frame_buf + width * height + i * width,
+      if (gray == false) {
+        for (i = 0; i < height / 2; i++) {
+          memcpy(frame_buf + width * height + i * width,
                isp_buf.img_addr.addr[1] + i * stride,
                width);
+        }
       }
     }
     hb_vio_free_pymbuf(pipeline_idx_, HB_VIO_ISP_YUV_DATA, &isp_buf);

@@ -212,7 +212,7 @@ std::vector<std::string> HobotMipiCapIml::listSensor() {
 
 int HobotMipiCapIml::getFrame(int nChnID, int* nVOutW, int* nVOutH,
         void* frame_buf, unsigned int bufsize, unsigned int* len,
-        uint64_t &timestamp) {
+        uint64_t &timestamp, bool gray) {
   int size = -1, ret = 0;
   struct timeval select_timeout = {0};
   hb_vio_buffer_t vOut;
@@ -266,7 +266,11 @@ int HobotMipiCapIml::getFrame(int nChnID, int* nVOutW, int* nVOutH,
     height = vOut.img_addr.height;
     *nVOutW = width;
     *nVOutH = height;
-    *len = width * height * 3 / 2;
+    if (gray == true) {
+      *len = width * height;
+    } else {
+      *len = width * height * 3 / 2;
+    }
     if (bufsize < *len) {
       RCLCPP_ERROR(rclcpp::get_logger("mipi_cam"),
         "buf size(%d) < frame size(%d)", bufsize, *len);
@@ -281,9 +285,11 @@ int HobotMipiCapIml::getFrame(int nChnID, int* nVOutW, int* nVOutH,
     }
     if (stride == width) {
       memcpy(frame_buf, vOut.img_addr.addr[0], width * height);
-      memcpy(frame_buf + width * height,
+      if (gray == false) {
+        memcpy(frame_buf + width * height,
              vOut.img_addr.addr[1],
              width * height / 2);
+      }
     } else {
       // jump over stride - width Y
       for (i = 0; i < height; i++) {
@@ -291,10 +297,12 @@ int HobotMipiCapIml::getFrame(int nChnID, int* nVOutW, int* nVOutH,
             frame_buf + i * width, vOut.img_addr.addr[0] + i * stride, width);
       }
       // jump over stride - width UV
-      for (i = 0; i < height / 2; i++) {
-        memcpy(frame_buf + width * height + i * width,
-               vOut.img_addr.addr[1] + i * stride,
-               width);
+      if (gray == false) {
+        for (i = 0; i < height / 2; i++) {
+          memcpy(frame_buf + width * height + i * width,
+                vOut.img_addr.addr[1] + i * stride,
+                width);
+        }
       }
     }
     HB_VPS_ReleaseChnFrame(

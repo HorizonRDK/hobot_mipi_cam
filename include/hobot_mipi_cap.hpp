@@ -23,6 +23,7 @@ namespace mipi_cam {
 typedef struct {
   std::string config_path;
   std::string sensor_type;
+  std::string out_format_name;
   int width;
   int height;
   int fps;
@@ -60,7 +61,7 @@ class HobotMipiCap {
 
   // 如果有 vps ，就 输出vps 的分层数据
   virtual int getFrame(int nChnID, int* nVOutW, int* nVOutH,
-      void* buf, unsigned int bufsize, unsigned int*, uint64_t&) = 0;
+      void* buf, unsigned int bufsize, unsigned int*, uint64_t&, bool gray = false) = 0;
 
   // 获取cap的info信息；
   // 输入输出参数：MIPI_CAP_INFO_ST的结构信息。

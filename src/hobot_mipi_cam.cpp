@@ -114,6 +114,17 @@ class MipiCamIml : public MipiCam {
   bool isCapturing();
 
  private:
+  inline void NV12_TO_BGR24(unsigned char *_src, unsigned char *_RGBOut, int width, int height);
+
+  typedef struct
+  {
+    int width;
+    int height;
+    int image_size;
+    char * image;
+  } camera_image_t;
+
+  camera_image_t *image_nv12_ = nullptr;
   bool lsInit_;
   bool is_capturing_;
   std::shared_ptr<HobotMipiCap> mipiCap_ptr_;
@@ -225,6 +236,13 @@ int MipiCamIml::start() {
               nodePare_.image_width_,
               nodePare_.image_height_);
   is_capturing_ = true;
+  if (nodePare_.out_format_name_ == "bgr8") {
+    image_nv12_ = reinterpret_cast<camera_image_t *>(calloc(1, sizeof(camera_image_t)));
+    image_nv12_->width = nodePare_.image_width_;
+    image_nv12_->height = nodePare_.image_height_;
+    image_nv12_->image_size = nodePare_.image_width_ * nodePare_.image_height_ * 1.5;
+    image_nv12_->image = reinterpret_cast<char *>(calloc(image_nv12_->image_size, sizeof(char *)));
+  }
   return ret;
 }
 
@@ -267,12 +285,40 @@ bool MipiCamIml::getImage(builtin_interfaces::msg::Time &stamp,
     clock_gettime(CLOCK_MONOTONIC, &ts);
     msStart = (ts.tv_sec * 1000 + ts.tv_nsec / 1000000);
   }
-
-  int data_size = nodePare_.image_width_ * nodePare_.image_height_ * 1.5;
-
-  data.resize(data_size);  // step * height);
   uint64_t timestamp;
-  if (mipiCap_ptr_->getFrame(
+  int data_size = nodePare_.image_width_ * nodePare_.image_height_ * 1.5;
+  if ((nodePare_.out_format_name_ == "bgr8") && image_nv12_) {
+    if (mipiCap_ptr_->getFrame(
+          2,
+          reinterpret_cast<int *>(&width),
+          reinterpret_cast<int *>(&height),
+          reinterpret_cast<void *>(image_nv12_->image),
+          image_nv12_->image_size,
+          reinterpret_cast<unsigned int *>(&data_size),
+          timestamp)) {
+      return false;
+    }
+    data_size = width * height * 3;
+    data.resize(data_size);  // step * height);
+    NV12_TO_BGR24((unsigned char *)image_nv12_->image,
+                  (unsigned char *)&data[0], width, height);
+    encoding = "bgr8";
+  } else if (nodePare_.out_format_name_ == "gray") {
+    data_size = nodePare_.image_width_ * nodePare_.image_height_;
+    data.resize(data_size);  // step * height);
+    if (mipiCap_ptr_->getFrame(
+          2,
+          reinterpret_cast<int *>(&width),
+          reinterpret_cast<int *>(&height),
+          reinterpret_cast<void *>(&data[0]),
+          data_size,
+          reinterpret_cast<unsigned int *>(&data_size),
+          timestamp, true))
+    return false;
+    encoding = "mono8";
+  } else {
+    data.resize(data_size);  // step * height);
+    if (mipiCap_ptr_->getFrame(
           2,
           reinterpret_cast<int *>(&width),
           reinterpret_cast<int *>(&height),
@@ -281,7 +327,8 @@ bool MipiCamIml::getImage(builtin_interfaces::msg::Time &stamp,
           reinterpret_cast<unsigned int *>(&data_size),
           timestamp))
     return false;
-  encoding = "nv12";
+    encoding = "nv12";
+  }
   stamp.sec = timestamp / 1e9;
   stamp.nanosec = timestamp - stamp.sec * 1e9;
   step = width;
@@ -333,7 +380,34 @@ bool MipiCamIml::getImageMem(
     msStart = (ts.tv_sec * 1000 + ts.tv_nsec / 1000000);
   }
   uint64_t timestamp;
-  if (mipiCap_ptr_->getFrame(
+  data_size = nodePare_.image_width_ * nodePare_.image_height_ * 1.5;
+  if ((nodePare_.out_format_name_ == "bgr8") && image_nv12_) {
+    if (mipiCap_ptr_->getFrame(
+          2,
+          reinterpret_cast<int *>(&width),
+          reinterpret_cast<int *>(&height),
+          reinterpret_cast<void *>(image_nv12_->image),
+          image_nv12_->image_size,
+          reinterpret_cast<unsigned int *>(&data_size),
+          timestamp))
+      return false;
+    data_size = width * height * 3;
+    NV12_TO_BGR24((unsigned char *)image_nv12_->image,
+                  (unsigned char *)data.data(), width, height);
+    memcpy(encoding.data(), "bgr8", strlen("bgr8"));
+  } else if (nodePare_.out_format_name_ == "gray") {
+    if (mipiCap_ptr_->getFrame(
+          2,
+          reinterpret_cast<int *>(&width),
+          reinterpret_cast<int *>(&height),
+          reinterpret_cast<void *>(data.data()),
+          6220800,
+          reinterpret_cast<unsigned int *>(&data_size),
+          timestamp, true))
+    return false;
+     memcpy(encoding.data(), "mono8", strlen("mono8"));
+  } else {
+    if (mipiCap_ptr_->getFrame(
           2,
           reinterpret_cast<int *>(&width),
           reinterpret_cast<int *>(&height),
@@ -342,7 +416,8 @@ bool MipiCamIml::getImageMem(
           reinterpret_cast<unsigned int *>(&data_size),
           timestamp))
     return false;
-  memcpy(encoding.data(), "nv12", strlen("nv12"));
+     memcpy(encoding.data(), "nv12", strlen("nv12"));
+  }
   stamp.sec = timestamp / 1e9;
   stamp.nanosec = timestamp - stamp.sec * 1e9;
   step = width;
@@ -437,6 +512,99 @@ bool MipiCamIml::getCamCalibration(sensor_msgs::msg::CameraInfo &cam_info,
       "Unable to parse camera calibration file normally:%s",
       e.what());
     return false;
+  }
+}
+
+#include <arm_neon.h>
+const uint8_t Y_SUBS[8] = { 16, 16, 16, 16, 16, 16, 16, 16 };
+const uint8_t UV_SUBS[8] = { 128, 128, 128, 128, 128, 128, 128, 128 };
+
+inline void MipiCamIml::NV12_TO_BGR24(unsigned char *_src, unsigned char *_RGBOut, int width, int height) {
+  unsigned char *src = (unsigned char*)_src;
+  unsigned char *RGBOut = (unsigned char*)_RGBOut;
+
+  int i, j;
+  int nWH = width * height;
+  unsigned char *pY1 = src;
+  unsigned char *pY2 = src + width;
+  unsigned char *pUV = src + nWH;
+
+  uint8x8_t Y_SUBvec = vld1_u8(Y_SUBS);
+  uint8x8_t UV_SUBvec = vld1_u8(UV_SUBS);
+
+  // int width2 = width >> 1;
+  int width3 = (width << 2) - width;
+  int width9 = (width << 3) + width;
+  unsigned char *RGBOut1 = RGBOut;
+  unsigned char *RGBOut2 = RGBOut1 + width3;
+  // unsigned char *RGBOut1 = RGBOut + 3 * width * (height - 2);
+  // unsigned char *RGBOut2 = RGBOut1 + width3;
+
+  unsigned char tempUV[8];
+  // YUV 4:2:0
+  // #pragma omp parallel for num_threads(4)
+  for (j = 0; j < height; j += 2) {
+      for (i = 0; i < width; i += 8) {
+          tempUV[0] = pUV[1];
+          tempUV[1] = pUV[3];
+          tempUV[2] = pUV[5];
+          tempUV[3] = pUV[7];
+
+          tempUV[4] = pUV[0];
+          tempUV[5] = pUV[2];
+          tempUV[6] = pUV[4];
+          tempUV[7] = pUV[6];
+
+          pUV += 8;
+          uint8x8_t nUVvec = vld1_u8(tempUV);
+          int16x8_t nUVvec16 = vmovl_s8((int8x8_t)vsub_u8(nUVvec, UV_SUBvec));  // 减后区间-128到127
+          int16x4_t V_4 = vget_low_s16((int16x8_t)nUVvec16);
+          int16x4x2_t V16x4x2 = vzip_s16(V_4, V_4);
+          // int16x8_t V16x8_;
+          // memcpy(&V16x8_, &V16x4x2, 16);
+          // int16x8_t* V16x8 = (int16x8_t*)(&V16x8_);
+          int16x8_t* V16x8 = reinterpret_cast<int16x8_t*>(&V16x4x2);
+          int16x4_t U_4 = vget_high_s16(nUVvec16);
+          int16x4x2_t U16x4x2 = vzip_s16(U_4, U_4);
+          int16x8_t* U16x8 = reinterpret_cast<int16x8_t*>(&U16x4x2);
+
+          // 公式1
+          int16x8_t VV1 = vmulq_n_s16(*V16x8, 102);
+          int16x8_t UU1 = vmulq_n_s16(*U16x8, 129);
+          int16x8_t VVUU1 = vmlaq_n_s16(vmulq_n_s16(*V16x8, 52), *U16x8, 25);
+
+          uint8x8_t nYvec;
+          uint8x8x3_t RGB;
+          uint16x8_t Y16;
+          // 上行
+          nYvec = vld1_u8(pY1);
+          pY1 += 8;
+          // 公式1
+          Y16 = vmulq_n_u16(vmovl_u8(vqsub_u8(nYvec, Y_SUBvec)), 74);  // 公式1
+
+          RGB.val[0] = vqmovun_s16(vshrq_n_s16((int16x8_t)vaddq_u16(Y16, (uint16x8_t)UU1), 6));
+          RGB.val[1] = vqmovun_s16(vshrq_n_s16((int16x8_t)vsubq_u16(Y16, (uint16x8_t)VVUU1), 6));
+          RGB.val[2] = vqmovun_s16(vshrq_n_s16((int16x8_t)vaddq_u16(Y16, (uint16x8_t)VV1), 6));
+          vst3_u8(RGBOut1, RGB);
+          RGBOut1 += 24;
+
+          // 下行
+          nYvec = vld1_u8(pY2);
+          pY2 += 8;
+          // 公式1
+          Y16 = vmulq_n_u16(vmovl_u8(vqsub_u8(nYvec, Y_SUBvec)), 74);  // 公式1
+          RGB.val[0] = vqmovun_s16(vshrq_n_s16((int16x8_t)vaddq_u16(Y16, (uint16x8_t)UU1), 6));
+          RGB.val[1] = vqmovun_s16(vshrq_n_s16((int16x8_t)vsubq_u16(Y16, (uint16x8_t)VVUU1), 6));
+          RGB.val[2] = vqmovun_s16(vshrq_n_s16((int16x8_t)vaddq_u16(Y16, (uint16x8_t)VV1), 6));
+          vst3_u8(RGBOut2, RGB);
+          RGBOut2 += 24;
+      }
+      RGBOut1 += width3;
+      RGBOut2 += width3;
+      // RGBOut1 -= width9;
+      // RGBOut2 -= width9;
+      pY1 += width;
+      pY2 += width;
   }
 }
 

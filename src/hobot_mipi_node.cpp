@@ -80,6 +80,9 @@ void MipiCamNode::getParams() {
       nodePare_.camera_info_url_ = parameter.value_to_string();
     } else if (parameter.get_name() == "out_format") {
       nodePare_.out_format_name_ = parameter.value_to_string();
+      RCLCPP_INFO(rclcpp::get_logger("mipi_node"),
+                  "out_format value: %s",
+                  parameter.value_to_string().c_str());
     } else if (parameter.get_name() == "frame_id") {
       frame_id_ = parameter.value_to_string();
     } else if (parameter.get_name() == "framerate") {

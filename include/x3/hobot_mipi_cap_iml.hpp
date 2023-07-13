@@ -53,7 +53,7 @@ class HobotMipiCapIml : public HobotMipiCap {
 
   // 如果有 vps ，就 输出vps 的分层数据
   int getFrame(int nChnID, int* nVOutW, int* nVOutH,
-        void* buf, unsigned int bufsize, unsigned int*, uint64_t&);
+        void* buf, unsigned int bufsize, unsigned int*, uint64_t&, bool gray = false);
 
   int parseConfig(std::string sensor_name, int w, int h, int fps);
 
