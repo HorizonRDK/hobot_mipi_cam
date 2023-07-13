@@ -147,7 +147,7 @@ int MipiCamIml::init(struct NodePara &para) {
   if (!mipiCap_ptr_) {
     RCLCPP_ERROR(rclcpp::get_logger("mipi_cam"),
       "[%s]->cap %s create capture failture.\r\n",
-      __func__, board_type);
+      __func__, board_type.c_str());
     return -1;
   }
   MIPI_CAP_INFO_ST cap_info;
@@ -157,37 +157,45 @@ int MipiCamIml::init(struct NodePara &para) {
   cap_info.height = nodePare_.image_height_;
   cap_info.fps = nodePare_.framerate_;
 
-  RCLCPP_INFO(rclcpp::get_logger("mipi_cam"),
-    "[%s]->nodePare_.video_device_name_: %s\r\n", __func__, nodePare_.video_device_name_.c_str());
-  RCLCPP_INFO(rclcpp::get_logger("mipi_cam"),
-    "[%s]->cap_info.sensor_typep--111: %s\r\n", __func__, cap_info.sensor_type.c_str());
-
-  mipiCap_ptr_->initEnv(nodePare_.video_device_name_);
-  if (nodePare_.video_device_name_.length() == 0
-      || nodePare_.video_device_name_ == "all"
-      || nodePare_.video_device_name_ == "ALL") {
-    bool detect_device = false;
-    auto mipicap_v = mipiCap_ptr_->listSensor();
-    if (mipicap_v.size() <= 0) {
-      RCLCPP_ERROR(rclcpp::get_logger("mipi_cam"),
-          "[%s] No camera detected!"
-          " Please check if camera is connected.\r\n",
-          __func__);
-        return -2;
-    }
-    cap_info.sensor_type = mipicap_v[0];
-    RCLCPP_INFO(rclcpp::get_logger("mipi_cam"),
-    "[%s]->mipicap_v[0]: %s\r\n", __func__, mipicap_v[0].c_str());
+  if (mipiCap_ptr_->initEnv() < 0) {
+    RCLCPP_ERROR(rclcpp::get_logger("mipi_cam"),
+    "[%s]->init %s's mipi host and gpio failure: %s\r\n", __func__, board_type.c_str());
+    return -1;
   }
-  RCLCPP_INFO(rclcpp::get_logger("mipi_cam"),
-    "[%s]->cap_info.sensor_typep: %s\r\n", __func__, cap_info.sensor_type.c_str());
+
+  auto mipicap_v = mipiCap_ptr_->listSensor();
+  if (mipicap_v.size() <= 0) {
+    if (cap_info.sensor_type.length() == 0) {
+      RCLCPP_ERROR(rclcpp::get_logger("mipi_cam"),
+        "[%s] No camera detected!"
+        " Please check if camera is connected.\r\n",
+        __func__);
+      return -2;
+    }
+  } else {
+    if ((cap_info.sensor_type.length() == 0)
+         || (cap_info.sensor_type == "default")) {
+      cap_info.sensor_type = mipicap_v[0];
+    } else {
+      bool detect_device = false;
+      for (auto sensor : mipicap_v) {
+        if(strcasecmp(sensor.c_str(), cap_info.sensor_type.c_str()) == 0) {
+          detect_device = true;
+          break;
+        }
+      }
+      if (detect_device == false) {
+        cap_info.sensor_type = mipicap_v[0];
+      }
+    }
+  }
   if (mipiCap_ptr_->init(cap_info) != 0) {
     RCLCPP_ERROR(rclcpp::get_logger("mipi_cam"),
       "[%s]->cap capture init failture.\r\n", __func__);
     return -5;
   }
-  RCLCPP_INFO(rclcpp::get_logger("mipi_cam"),
-    "[%s]->cap %s init success.\r\n", __func__, nodePare_.video_device_name_.c_str());
+  RCLCPP_WARN(rclcpp::get_logger("mipi_cam"),
+    "[%s]->cap %s init success.\r\n", __func__, cap_info.sensor_type.c_str());
   lsInit_ = true;
   return 0;
 }
@@ -226,7 +234,7 @@ int MipiCamIml::stop() {
     ret = mipiCap_ptr_->stop();
   }
   is_capturing_ = false;
-  RCLCPP_INFO(rclcpp::get_logger("mipi_cam"),
+  RCLCPP_WARN(rclcpp::get_logger("mipi_cam"),
     "mipi_cam is stoped");
   return ret;
 }
@@ -274,9 +282,6 @@ bool MipiCamIml::getImage(builtin_interfaces::msg::Time &stamp,
           timestamp))
     return false;
   encoding = "nv12";
-  //clock_gettime(CLOCK_REALTIME, &time_start);
-  //stamp.sec = time_start.tv_sec;
-  //stamp.nanosec = time_start.tv_nsec;
   stamp.sec = timestamp / 1e9;
   stamp.nanosec = timestamp - stamp.sec * 1e9;
   step = width;
@@ -338,9 +343,6 @@ bool MipiCamIml::getImageMem(
           timestamp))
     return false;
   memcpy(encoding.data(), "nv12", strlen("nv12"));
-  //clock_gettime(CLOCK_REALTIME, &time_start);
-  //stamp.sec = time_start.tv_sec;
-  //stamp.nanosec = time_start.tv_nsec;
   stamp.sec = timestamp / 1e9;
   stamp.nanosec = timestamp - stamp.sec * 1e9;
   step = width;
@@ -364,16 +366,18 @@ bool MipiCamIml::getCamCalibration(sensor_msgs::msg::CameraInfo &cam_info,
                                   const std::string &file_path) {
 
   try {
-    std::string cal_file = file_path;
-    //if (file_path == "") {
-   //   MIPI_CAP_INFO_ST cap_info;
-   //   mipiCap_ptr_->getCapInfo(cap_info);
-    //  cal_file = cap_info.config_path + "/" + cap_info.sensor_type + "_calibration.yaml";
-    //}
+    std::string cal_file;
+    if ((file_path.length() == 0) || (file_path == "default")) {
+      MIPI_CAP_INFO_ST cap_info;
+      mipiCap_ptr_->getCapInfo(cap_info);
+      cal_file = cap_info.config_path + "/" + cap_info.sensor_type + "_calibration.yaml";
+    } else {
+      cal_file = file_path;
+    }
     std::string camera_name;
     std::ifstream fin(cal_file.c_str());
     if (!fin) {
-     RCLCPP_ERROR(rclcpp::get_logger("mipi_cam"),
+      RCLCPP_ERROR(rclcpp::get_logger("mipi_cam"),
           "Camera calibration file: %s not exist! Please make sure the "
           "calibration file path is correct and the calibration file exists!",
           cal_file.c_str());

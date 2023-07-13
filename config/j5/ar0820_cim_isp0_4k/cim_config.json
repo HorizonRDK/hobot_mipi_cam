@@ -26,7 +26,7 @@
 			},
 			"output": {
 				"pym": {
-					"pym0_en": 1,
+					"pym0_en": 0,
 					"pym1_en": 0
 				},
 				"isp0": {

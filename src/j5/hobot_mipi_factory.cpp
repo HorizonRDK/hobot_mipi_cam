@@ -29,7 +29,7 @@ std::shared_ptr<HobotMipiCap> createMipiCap(const std::string &dev_name) {
     cap_ptr = std::make_shared<HobotMipiCapImlJ5Evm>();
   } else {
     RCLCPP_ERROR(rclcpp::get_logger("mipi_factory"),
-    "create Mipi Capture failture \n");
+       "This is't support device type, only support RDKJ5 j5evm.\n");
   }
   return cap_ptr;
 }
@@ -37,7 +37,7 @@ std::shared_ptr<HobotMipiCap> createMipiCap(const std::string &dev_name) {
 std::string getBoardType() {
   int board_type = 0;
   bool auto_detect = false;
-  std::ifstream som_name("/sys/class/socinfo/som_name");
+  std::ifstream som_name("/sys/class/socinfo/board_id");
   if (som_name.is_open()) {
     som_name >> board_type;
     auto_detect = true;
@@ -45,10 +45,10 @@ std::string getBoardType() {
   std::string board_type_str = "";
   if (auto_detect) {
     switch (board_type) {
-      //case 3:
-      //  board_type_str = "j5evm";
-      //  break;
-      case 3:
+      case 1283:
+        board_type_str = "j5evm";
+        break;
+      case 2560:
         board_type_str = "RDKJ5";
         break;
       default:

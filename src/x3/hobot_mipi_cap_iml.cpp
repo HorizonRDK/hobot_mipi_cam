@@ -16,9 +16,7 @@
 #include "hobot_mipi_cap_iml.hpp"
 #include "vio/hb_vio_interface.h"
 #include "cam/hb_cam_interface.h"
-
 #include "sensor_msgs/msg/camera_info.hpp"
-
 
 #include <string>
 #include <fstream>
@@ -36,14 +34,15 @@
 
 namespace mipi_cam {
 
-int HobotMipiCapIml::initEnv(std::string sensor) {
+int HobotMipiCapIml::initEnv() {
   return 0;
 }
 
 int HobotMipiCapIml::init(MIPI_CAP_INFO_ST &info) {
   int ret = 0;
-  memcpy(&cap_info_, &info, sizeof(MIPI_CAP_INFO_ST));
-  parseConfig(info.sensor_type, info.width, info.height, info.fps);
+  cap_info_ = info;
+
+  parseConfig(cap_info_.sensor_type, cap_info_.width, cap_info_.height, cap_info_.fps);
   int pipeline_id = 0;
   for (; pipeline_id < 8; pipeline_id++) {
     if (!checkPipelineOpened(pipeline_id)) {
@@ -54,8 +53,6 @@ int HobotMipiCapIml::init(MIPI_CAP_INFO_ST &info) {
     goto vp_err;
   }
   vin_info_.pipe_id = pipeline_id;
-
-  resetSensor(info.sensor_type);
 
   ret = x3_vp_init();
   if (ret) {
@@ -83,7 +80,7 @@ int HobotMipiCapIml::init(MIPI_CAP_INFO_ST &info) {
     if (HB_ERR_VIN_SIF_INIT_FAIL == abs(ret)) {  //重复打开
       RCLCPP_ERROR(rclcpp::get_logger("mipi_cam"),
         "Cannot open '%s'! You may have started mipi_cam repeatedly?",
-        info.sensor_type);
+        cap_info_.sensor_type);
     }
     x3_vp_deinit();
     return -2;
@@ -114,8 +111,6 @@ int HobotMipiCapIml::init(MIPI_CAP_INFO_ST &info) {
   HB_ISP_GetSetInit();
   RCLCPP_INFO(rclcpp::get_logger("mipi_cam"),
     "x3 camera init success.\n");
-  std::cout << "HobotMipiCapIml::init,ret:" << ret << std::endl;
-  // m_nDevStat = 1;
   return ret;
 vps_bind_err:
   if (vps_enable_) {
@@ -302,7 +297,6 @@ int HobotMipiCapIml::getFrame(int nChnID, int* nVOutW, int* nVOutH,
                width);
       }
     }
-    // yuv 转成 rgb8
     HB_VPS_ReleaseChnFrame(
         vps_infos_.m_vps_info[0].m_vps_grp_id,
         nChnID,
@@ -381,7 +375,7 @@ bool HobotMipiCapIml::checkPipelineOpened(int pipeline_idx) {
             "pipe " + std::to_string(pipeline_idx) + " not inited";
       if (!cfg_info.compare(pipe_line_info)) {
         RCLCPP_ERROR(rclcpp::get_logger("mipi_cam"),
-          "mipi camera already in use.\n");
+          "mipi camera the pipeline %d is idle.\n", pipeline_idx);
         return false;
       }
     }
@@ -390,49 +384,197 @@ bool HobotMipiCapIml::checkPipelineOpened(int pipeline_idx) {
 }
 
 int HobotMipiCapIml::getCapInfo(MIPI_CAP_INFO_ST &info) {
-  int ret = 0;
-  memcpy(&info, &cap_info_, sizeof(MIPI_CAP_INFO_ST));
-}
-
-
-int HobotMipiCapIml::resetSensor(std::string sensor) {
-  RCLCPP_WARN(rclcpp::get_logger("mipi_cam"), "HobotMipiCapIml::resetSensor");
-  return 0;
+  info = cap_info_;
 }
 
 int HobotMipiCapIml::getSensorBus(std::string &sensor_name) {
   return 0xff;
 }
 
-int HobotMipiCapImlX3pi::initEnv(std::string sensor) {
-  std::vector<std::string> sys_cmds = {
-    "echo 19 > /sys/class/gpio/export",
-    "echo out > /sys/class/gpio/gpio19/direction",
-    "echo 0 > /sys/class/gpio/gpio19/value",
-    "sleep 0.2",
-    "echo 1 > /sys/class/gpio/gpio19/value",
-    "echo 19 > /sys/class/gpio/unexport",
-    "echo 1 > /sys/class/vps/mipi_host0/param/snrclk_en",
-    "echo 1 > /sys/class/vps/mipi_host1/param/snrclk_en",
-    "echo 24000000 > /sys/class/vps/mipi_host0/param/snrclk_freq",
-    "echo 24000000 > /sys/class/vps/mipi_host1/param/snrclk_freq",
-    "echo 1 > /sys/class/vps/mipi_host0/param/stop_check_instart",
-    "echo 1 > /sys/class/vps/mipi_host1/param/stop_check_instart"
-  };
+void HobotMipiCapIml::listMipiHost(std::vector<int> &mipi_hosts, 
+    std::vector<int> &started, std::vector<int> &stoped) {
+  std::vector<int> host;
+  std::string board_type_str = "";
+  for (int num : mipi_hosts) {
+    std::string mipi_host = "/sys/class/vps/mipi_host" + std::to_string(num) + "/status/cfg";
+    std::ifstream mipi_host_fd(mipi_host);
+    board_type_str = "";
+    if (mipi_host_fd.is_open()) {
+      std::getline(mipi_host_fd, board_type_str);
+      if (board_type_str == "not inited") {
+        stoped.push_back(num);
+      } else {
+        started.push_back(num);
+      }
+      mipi_host_fd.close();
+    }
+  }
+}
+
+bool HobotMipiCapIml::detectSensor(SENSOR_ID_T &sensor_info) {
+  char cmd[256];
+  char result[1024];
+  memset(cmd, '\0', sizeof(cmd));
+  memset(result, '\0', sizeof(result));
+  if (sensor_info.i2c_addr_width == I2C_ADDR_8) {
+    sprintf(cmd, "i2ctransfer -y -f %d w1@0x%x 0x%x r1 2>&1",
+            sensor_info.i2c_bus,
+            sensor_info.i2c_dev_addr,
+            sensor_info.det_reg);
+  } else if (sensor_info.i2c_addr_width == I2C_ADDR_16) {
+    sprintf(cmd,
+            "i2ctransfer -y -f %d w2@0x%x 0x%x 0x%x r1 2>&1",
+            sensor_info.i2c_bus,
+            sensor_info.i2c_dev_addr,
+            sensor_info.det_reg >> 8,
+            sensor_info.det_reg & 0xFF);
+  } else {
+    return false;
+  }
+  exec_cmd_ex(cmd, result, sizeof(result));
+  if (strstr(result, "Error") == NULL && strstr(result, "error") == NULL) {
+    // 返回结果中不带Error, 说明sensor找到了
+    RCLCPP_INFO(rclcpp::get_logger("mipi_cam"),
+          "match sensor:%s\n", sensor_info.sensor_name);
+    return true;
+  }
+  return false;
+}
+
+
+
+int HobotMipiCapImlRDKX3::initEnv() {
+  std::vector<int> mipi_hosts = {0};
+  std::vector<int> mipi_started;
+  std::vector<int> mipi_stoped;
+  listMipiHost(mipi_hosts, mipi_started, mipi_stoped);
+  if (mipi_stoped.size() == 0) {
+    return -1;
+  }
+  std::vector<std::string> sys_cmds;
+  for (int num : mipi_stoped) {
+    switch (num) {
+      case 0:
+        sys_cmds.push_back("echo 19 > /sys/class/gpio/export");
+        sys_cmds.push_back("echo out > /sys/class/gpio/gpio19/direction");
+        sys_cmds.push_back("echo 0 > /sys/class/gpio/gpio19/value");
+        sys_cmds.push_back("sleep 0.2");
+        sys_cmds.push_back("echo 1 > /sys/class/gpio/gpio19/value");
+        sys_cmds.push_back("echo 19 > /sys/class/gpio/unexport");
+        sys_cmds.push_back("echo 24000000 > /sys/class/vps/mipi_host0/param/snrclk_freq");
+        sys_cmds.push_back("echo 1 > /sys/class/vps/mipi_host0/param/stop_check_instart");
+        break;
+      default:
+        break;
+    }
+  }
   for (const auto& sys_cmd : sys_cmds) {
     system(sys_cmd.data());
   }
   return 0;
 }
 
-// mipi sensor的信息数组
-SENSOR_ID_T sensor_id_list_x3pi[] = {
-    {2, 0x40, I2C_ADDR_8, 0x0B, "f37"},        // F37
-    {1, 0x40, I2C_ADDR_8, 0x0B, "f37"},        // F37
+std::vector<std::string> HobotMipiCapImlRDKX3::listSensor() {
+
+  // mipi sensor的信息数组
+  SENSOR_ID_T sensor_id_list[] = {
+    {2, 0x40, I2C_ADDR_8, 0x0B, "F37"},        // F37
+    {1, 0x40, I2C_ADDR_8, 0x0B, "F37"},        // F37
+    {1, 0x29, I2C_ADDR_16, 0x03f0, "GC4663"},  // GC4663
+    {2, 0x29, I2C_ADDR_16, 0x03f0, "GC4663"},  // GC4663
+    {1, 0x10, I2C_ADDR_16, 0x0000, "imx219"},  // imx219 for x3-pi
+    {2, 0x10, I2C_ADDR_16, 0x0000, "imx219"},  // imx219 for x3-pi
+    {3, 0x10, I2C_ADDR_16, 0x0000, "imx219"},  // imx219 for x3-pi
+    {1, 0x1a, I2C_ADDR_16, 0x0200, "imx477"},  // imx477 for x3-pi
+    {2, 0x1a, I2C_ADDR_16, 0x0200, "imx477"},  // imx477 for x3-pi
+    {3, 0x1a, I2C_ADDR_16, 0x0200, "imx477"},  // imx477 for x3-pi
+    {1, 0x36, I2C_ADDR_16, 0x300A, "ov5647"},  // ov5647 for x3-pi
+    {2, 0x36, I2C_ADDR_16, 0x300A, "ov5647"},  // ov5647 for x3-pi
+    {3, 0x36, I2C_ADDR_16, 0x300A, "ov5647"},  // ov5647 for x3-pi
+    {2, 0x29, I2C_ADDR_16, 0x0000, "gc4c33"},  // gc4c33
+    {1, 0x29, I2C_ADDR_16, 0x0000, "gc4c33"},  // gc4c33
+  };
+  std::vector<std::string> device;
+
+  /* sdb 生态开发板  ，使能sensor       mclk, 否则i2c 通信不会成功的 */
+  HB_MIPI_EnableSensorClock(0);
+  HB_MIPI_EnableSensorClock(1);
+  // HB_MIPI_EnableSensorClock(2); // 需要修改内核dts使能mipihost2的mclk
+
+  for (auto sensor_id : sensor_id_list) {
+    if (detectSensor(sensor_id)) {
+      device.push_back(sensor_id.sensor_name);
+    }
+  }
+  return device;
+}
+
+int HobotMipiCapImlRDKX3::getSensorBus(std::string &sensor_name) {
+  int ret = 0xff;
+  if ((sensor_name == "IMX415") || (sensor_name == "imx415")) {
+    ret = 1;
+  } else if ((sensor_name == "F37") || (sensor_name == "f37")) {
+     ret = 1;
+  } else if ((sensor_name == "GC4663") || (sensor_name == "gc4663")) {
+     ret = 1;
+  } else if ((sensor_name == "IMX586") || (sensor_name == "imx586")) {
+     ret = 1;
+  } else if ((sensor_name == "GC4C33") || (sensor_name == "gc4c33")) {
+     ret = 1;
+  } else if ((sensor_name == "IMX219") || (sensor_name == "imx219")) {
+     ret = 1;
+  } else if ((sensor_name == "IMX477") || (sensor_name == "imx477")) {
+     ret = 1;
+  } else if ((sensor_name == "OV5647") || (sensor_name == "ov5647")) {
+     ret = 1;
+  }
+  return ret;
+}
+
+
+
+
+int HobotMipiCapImlRDKX3_m::initEnv() {
+  std::vector<int> mipi_hosts = {0,1,2,3};
+  std::vector<int> mipi_started;
+  std::vector<int> mipi_stoped;
+  listMipiHost(mipi_hosts, mipi_started, mipi_stoped);
+  if (mipi_stoped.size() == 0) {
+    return -1;
+  }
+  std::vector<std::string> sys_cmds;
+  for (int num : mipi_stoped) {
+    switch (num) {
+      case 0:
+        sys_cmds.push_back("echo 19 > /sys/class/gpio/export");
+        sys_cmds.push_back("echo out > /sys/class/gpio/gpio19/direction");
+        sys_cmds.push_back("echo 0 > /sys/class/gpio/gpio19/value");
+        sys_cmds.push_back("sleep 0.2");
+        sys_cmds.push_back("echo 1 > /sys/class/gpio/gpio19/value");
+        sys_cmds.push_back("echo 19 > /sys/class/gpio/unexport");
+        sys_cmds.push_back("echo 24000000 > /sys/class/vps/mipi_host0/param/snrclk_freq");
+        sys_cmds.push_back("echo 1 > /sys/class/vps/mipi_host0/param/stop_check_instart");
+        break;
+      default:
+        break;
+    }
+  }
+  for (const auto& sys_cmd : sys_cmds) {
+    system(sys_cmd.data());
+  }
+  return 0;
+}
+
+std::vector<std::string> HobotMipiCapImlRDKX3_m::listSensor() {
+
+  // mipi sensor的信息数组
+  SENSOR_ID_T sensor_id_list[] = {
+    {2, 0x40, I2C_ADDR_8, 0x0B, "F37"},        // F37
+    {1, 0x40, I2C_ADDR_8, 0x0B, "F37"},        // F37
     {2, 0x1a, I2C_ADDR_16, 0x0000, "imx415"},  // imx415
     {1, 0x1a, I2C_ADDR_16, 0x0000, "imx415"},  // imx415
-    {1, 0x29, I2C_ADDR_16, 0x03f0, "gc4663"},  // GC4663
-    {2, 0x29, I2C_ADDR_16, 0x03f0, "gc4663"},  // GC4663
+    {1, 0x29, I2C_ADDR_16, 0x03f0, "GC4663"},  // GC4663
+    {2, 0x29, I2C_ADDR_16, 0x03f0, "GC4663"},  // GC4663
     {1, 0x10, I2C_ADDR_16, 0x0000, "imx219"},  // imx219 for x3-pi
     {2, 0x10, I2C_ADDR_16, 0x0000, "imx219"},  // imx219 for x3-pi
     {3, 0x10, I2C_ADDR_16, 0x0000, "imx219"},  // imx219 for x3-pi
@@ -446,64 +588,116 @@ SENSOR_ID_T sensor_id_list_x3pi[] = {
     {1, 0x1a, I2C_ADDR_16, 0x0000, "imx586"},  // imx586
     {2, 0x29, I2C_ADDR_16, 0x0000, "gc4c33"},  // gc4c33
     {1, 0x29, I2C_ADDR_16, 0x0000, "gc4c33"},  // gc4c33
-};
-
-std::vector<std::string> HobotMipiCapImlX3pi::listSensor() {
+  };
   std::vector<std::string> device;
-  int i = 0;
-  char cmd[256];
-  char result[1024];
-  // #define ARRAY_SIZE(a) ((sizeof(a) / sizeof(a[0])))
 
   /* sdb 生态开发板  ，使能sensor       mclk, 否则i2c 通信不会成功的 */
   HB_MIPI_EnableSensorClock(0);
   HB_MIPI_EnableSensorClock(1);
   // HB_MIPI_EnableSensorClock(2); // 需要修改内核dts使能mipihost2的mclk
-  for (i = 0; i < ARRAY_SIZE(sensor_id_list_x3pi); i++) {
-    // 通过i2ctransfer命令读取特定寄存器，判断是否读取成功来判断是否支持相应的sensor
-    memset(cmd, '\0', sizeof(cmd));
-    memset(result, '\0', sizeof(result));
-    if (sensor_id_list_x3pi[i].i2c_addr_width == I2C_ADDR_8) {
-      sprintf(cmd, "i2ctransfer -y -f %d w1@0x%x 0x%x r1 2>&1",
-              sensor_id_list_x3pi[i].i2c_bus,
-              sensor_id_list_x3pi[i].i2c_dev_addr,
-              sensor_id_list_x3pi[i].det_reg);
-    } else if (sensor_id_list_x3pi[i].i2c_addr_width == I2C_ADDR_16) {
-      sprintf(cmd,
-              "i2ctransfer -y -f %d w2@0x%x 0x%x 0x%x r1 2>&1",
-              sensor_id_list_x3pi[i].i2c_bus,
-              sensor_id_list_x3pi[i].i2c_dev_addr,
-              sensor_id_list_x3pi[i].det_reg >> 8,
-              sensor_id_list_x3pi[i].det_reg & 0xFF);
-    } else {
-      continue;
-    }
-    // i2ctransfer -y -f 3 w2@0x36 0x1 0x0 r1 2>&1 ;这个命令执行会崩溃
-    exec_cmd_ex(cmd, result, sizeof(result));
-    if (strstr(result, "Error") == NULL && strstr(result, "error") == NULL) {
-      // 返回结果中不带Error, 说明sensor找到了
-      RCLCPP_INFO(rclcpp::get_logger("mipi_cam"), "push sensor::%s", sensor_id_list_x3pi[i].sensor_name);
-      device.push_back(sensor_id_list_x3pi[i].sensor_name);
+
+  for (auto sensor_id : sensor_id_list) {
+    if (detectSensor(sensor_id)) {
+      device.push_back(sensor_id.sensor_name);
     }
   }
   return device;
 }
 
-int HobotMipiCapImlX3pi::resetSensor(std::string sensor) {
-  // std::cout << "HobotMipiCapImlX3pi::resetSensor" << std::endl;
-  // x3pi两个sensor使用的同一个reset管脚，只需要复位一次
-  (void)system("echo 19 > /sys/class/gpio/export");
-  (void)system("echo out > /sys/class/gpio/gpio19/direction");
-  (void)system("echo 0 > /sys/class/gpio/gpio19/value");
-  (void)system("sleep 0.2");
-  (void)system("echo 1 > /sys/class/gpio/gpio19/value");
-  (void)system("echo 19 > /sys/class/gpio/unexport");
-  (void)system("echo 1 > /sys/class/vps/mipi_host0/param/snrclk_en");
-  (void)system("echo 24000000 > /sys/class/vps/mipi_host0/param/snrclk_freq");
-  (void)system("echo 1 > /sys/class/vps/mipi_host2/param/stop_check_instart");
+int HobotMipiCapImlRDKX3_m::getSensorBus(std::string &sensor_name) {
+  int ret = 0xff;
+  if ((sensor_name == "IMX415") || (sensor_name == "imx415")) {
+    ret = 1;
+  } else if ((sensor_name == "F37") || (sensor_name == "f37")) {
+     ret = 1;
+  } else if ((sensor_name == "GC4663") || (sensor_name == "gc4663")) {
+     ret = 1;
+  } else if ((sensor_name == "IMX586") || (sensor_name == "imx586")) {
+     ret = 1;
+  } else if ((sensor_name == "GC4C33") || (sensor_name == "gc4c33")) {
+     ret = 1;
+  } else if ((sensor_name == "IMX219") || (sensor_name == "imx219")) {
+     ret = 1;
+  } else if ((sensor_name == "IMX477") || (sensor_name == "imx477")) {
+     ret = 1;
+  } else if ((sensor_name == "OV5647") || (sensor_name == "ov5647")) {
+     ret = 1;
+  }
+  return ret;
 }
 
-int HobotMipiCapImlX3pi::getSensorBus(std::string &sensor_name) {
+
+int HobotMipiCapImlSDB::initEnv() {
+  std::vector<int> mipi_hosts = {0,1,2,3};
+  std::vector<int> mipi_started;
+  std::vector<int> mipi_stoped;
+  listMipiHost(mipi_hosts, mipi_started, mipi_stoped);
+  if (mipi_stoped.size() == 0) {
+    return -1;
+  }
+  std::vector<std::string> sys_cmds;
+  for (int num : mipi_stoped) {
+    switch (num) {
+      case 0:
+        sys_cmds.push_back("echo 19 > /sys/class/gpio/export");
+        sys_cmds.push_back("echo out > /sys/class/gpio/gpio19/direction");
+        sys_cmds.push_back("echo 0 > /sys/class/gpio/gpio19/value");
+        sys_cmds.push_back("sleep 0.2");
+        sys_cmds.push_back("echo 1 > /sys/class/gpio/gpio19/value");
+        sys_cmds.push_back("echo 19 > /sys/class/gpio/unexport");
+        sys_cmds.push_back("echo 24000000 > /sys/class/vps/mipi_host0/param/snrclk_freq");
+        sys_cmds.push_back("echo 1 > /sys/class/vps/mipi_host0/param/stop_check_instart");
+        break;
+      default:
+        break;
+    }
+  }
+  for (const auto& sys_cmd : sys_cmds) {
+    system(sys_cmd.data());
+  }
+  return 0;
+}
+
+std::vector<std::string> HobotMipiCapImlSDB::listSensor() {
+
+  // mipi sensor的信息数组
+  SENSOR_ID_T sensor_id_list[] = {
+    {2, 0x40, I2C_ADDR_8, 0x0B, "F37"},        // F37
+    {1, 0x40, I2C_ADDR_8, 0x0B, "F37"},        // F37
+    {2, 0x1a, I2C_ADDR_16, 0x0000, "imx415"},  // imx415
+    {1, 0x1a, I2C_ADDR_16, 0x0000, "imx415"},  // imx415
+    {1, 0x29, I2C_ADDR_16, 0x03f0, "GC4663"},  // GC4663
+    {2, 0x29, I2C_ADDR_16, 0x03f0, "GC4663"},  // GC4663
+    {1, 0x10, I2C_ADDR_16, 0x0000, "imx219"},  // imx219 for x3-pi
+    {2, 0x10, I2C_ADDR_16, 0x0000, "imx219"},  // imx219 for x3-pi
+    {3, 0x10, I2C_ADDR_16, 0x0000, "imx219"},  // imx219 for x3-pi
+    {1, 0x1a, I2C_ADDR_16, 0x0200, "imx477"},  // imx477 for x3-pi
+    {2, 0x1a, I2C_ADDR_16, 0x0200, "imx477"},  // imx477 for x3-pi
+    {3, 0x1a, I2C_ADDR_16, 0x0200, "imx477"},  // imx477 for x3-pi
+    {1, 0x36, I2C_ADDR_16, 0x300A, "ov5647"},  // ov5647 for x3-pi
+    {2, 0x36, I2C_ADDR_16, 0x300A, "ov5647"},  // ov5647 for x3-pi
+    {3, 0x36, I2C_ADDR_16, 0x300A, "ov5647"},  // ov5647 for x3-pi
+    {2, 0x1a, I2C_ADDR_16, 0x0000, "imx586"},  // imx586
+    {1, 0x1a, I2C_ADDR_16, 0x0000, "imx586"},  // imx586
+    {2, 0x29, I2C_ADDR_16, 0x0000, "gc4c33"},  // gc4c33
+    {1, 0x29, I2C_ADDR_16, 0x0000, "gc4c33"},  // gc4c33
+  };
+  std::vector<std::string> device;
+
+  /* sdb 生态开发板  ，使能sensor       mclk, 否则i2c 通信不会成功的 */
+  HB_MIPI_EnableSensorClock(0);
+  HB_MIPI_EnableSensorClock(1);
+  // HB_MIPI_EnableSensorClock(2); // 需要修改内核dts使能mipihost2的mclk
+
+  for (auto sensor_id : sensor_id_list) {
+    if (detectSensor(sensor_id)) {
+      device.push_back(sensor_id.sensor_name);
+    }
+  }
+  return device;
+}
+
+int HobotMipiCapImlSDB::getSensorBus(std::string &sensor_name) {
   int ret = 0xff;
   if ((sensor_name == "IMX415") || (sensor_name == "imx415")) {
     ret = 1;

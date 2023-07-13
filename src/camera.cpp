@@ -21,17 +21,14 @@
 using mipi_cam::MipiCamNode;
 
 int main(int argc, char** argv) {
+  RCLCPP_WARN(rclcpp::get_logger("mipi_cam"), "This is version for optimizing camera timestamp!");
+
   rclcpp::init(argc, argv);
-  RCLCPP_WARN(rclcpp::get_logger("mipi_cam"), "This is camera!");
-  
   rclcpp::NodeOptions opt;
   auto node = std::make_shared<MipiCamNode>(opt);
   node->init();
-  RCLCPP_WARN(rclcpp::get_logger("mipi_cam"), "MipiCamNode init!");
-
   rclcpp::executors::SingleThreadedExecutor exec;
   exec.add_node(node);
-  RCLCPP_WARN(rclcpp::get_logger("mipi_cam"), "MipiCamNode add_node!");
   exec.spin();
 
   rclcpp::shutdown();

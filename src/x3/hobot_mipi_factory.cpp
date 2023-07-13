@@ -22,13 +22,15 @@
 namespace mipi_cam {
 std::shared_ptr<HobotMipiCap> createMipiCap(const std::string &dev_name) {
   std::shared_ptr<HobotMipiCap> cap_ptr;
-  if (dev_name == "x3pi") {
-    cap_ptr = std::make_shared<HobotMipiCapImlX3pi>();
+  if (dev_name == "RDKX3") {
+    cap_ptr = std::make_shared<HobotMipiCapImlRDKX3>();
   } else if (dev_name == "x3sdb") {
-    cap_ptr = std::make_shared<HobotMipiCapIml>();
+    cap_ptr = std::make_shared<HobotMipiCapImlSDB>();
+  } else if (dev_name == "RDKX3_m") {
+    cap_ptr = std::make_shared<HobotMipiCapImlRDKX3_m>();
   } else {
     RCLCPP_ERROR(rclcpp::get_logger("mipi_factory"),
-    "create Mipi Capture failture \n");
+    "This is't support device type, only support x3sdb RDKX3 and RDKX3_m.\n");
   }
   return cap_ptr;
 }
@@ -50,12 +52,24 @@ std::string getBoardType() {
         break;
       case 5:
       case 6:
-        board_type_str = "x3pi";
+      case 8:
+      case 9:
+        board_type_str = "RDKX3";
+        break;      
+      case 11:
+      case 12:
+      case 13:
+      case 14:
+      case 15:
+      case 16:
+        board_type_str = "RDKX3_m";
         break;
       default:
         break;
     }
   }
+  RCLCPP_INFO(rclcpp::get_logger("mipi_factory"),
+    "board_type %s\n", board_type_str.c_str());
   return board_type_str;
 }
 
