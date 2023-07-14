@@ -67,7 +67,6 @@ mipi_cam.launch.py配置默认输出960*544分辨率NV12图像，发布的话题
 
 ```shell
 source /opt/tros/setup.bash
-
 ros2 launch hobot_codec hobot_codec_encode.launch.py codec_out_format:=jpeg-compressed codec_pub_topic:=/image_raw/compressed
 ```
 
@@ -95,7 +94,6 @@ ros2 launch hobot_codec hobot_codec_encode.launch.py
 ```
 另起一个终端
 ```shell
-
 source /opt/tros/local_setup.bash
 # 启动websocket
 ros2 launch websocket websocket.launch.py websocket_image_topic:=/image_jpeg websocket_only_show_image:=true
