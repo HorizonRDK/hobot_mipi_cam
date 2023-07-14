@@ -32,6 +32,10 @@ sudo apt install -y tros-mipi-cam
 
 ```
 source /opt/tros/setup.bash
+
+# 从tros.b的安装路径中拷贝出运行示例需要的配置文件。
+cp -r /opt/tros/lib/mipi_cam/config/ .
+
 ros2 run mipi_cam mipi_cam
 ```
 
@@ -45,6 +49,10 @@ ros2 run mipi_cam mipi_cam
 
 ```bash
 source /opt/tros/setup.bash
+
+# 从tros.b的安装路径中拷贝出运行示例需要的配置文件。
+cp -r /opt/tros/lib/mipi_cam/config/ .
+
 ros2 run mipi_cam mipi_cam --ros-args -p image_width:=960 -p image_height:=540
 ```
 
@@ -54,6 +62,10 @@ ros2 run mipi_cam mipi_cam --ros-args -p image_width:=960 -p image_height:=540
 
 ````bash
 source /opt/tros/setup.bash
+
+# 从tros.b的安装路径中拷贝出运行示例需要的配置文件。
+cp -r /opt/tros/lib/mipi_cam/config/ .
+
 ros2 run mipi_cam mipi_cam --ros-args -p out_format:=nv12 -p image_width:=960 -p image_height:=540
 ````
 
@@ -65,6 +77,10 @@ ros2 run mipi_cam mipi_cam --ros-args -p out_format:=nv12 -p image_width:=960 -p
 
 ````bash
 source /opt/tros/setup.bash
+
+# 从tros.b的安装路径中拷贝出运行示例需要的配置文件。
+cp -r /opt/tros/lib/mipi_cam/config/ .
+
 ros2 run mipi_cam mipi_cam --ros-args -p io_method:=shared_mem
 ````
 
@@ -79,6 +95,8 @@ ros2 run mipi_cam mipi_cam --ros-args -p io_method:=shared_mem
 
 ```bash
 # config中为示例使用的相机标定文件，根据实际安装路径进行拷贝
+cp -r /opt/tros/lib/mipi_cam/config/ .
+
 source /opt/tros/setup.bash
 ros2 run mipi_cam mipi_cam --ros-args -p camera_calibration_file_path:=./config/GC4663_calibration.yaml -p video_device:=GC4663
 ```
@@ -108,6 +126,10 @@ sudo apt-get install ros-foxy-image-transport-plugins
 
 ```bash
 source /opt/tros/setup.bash
+
+# 从tros.b的安装路径中拷贝出运行示例需要的配置文件。
+cp -r /opt/tros/lib/mipi_cam/config/ .
+
 ros2 run mipi_cam mipi_cam --ros-args -p image_width:=960 -p image_height:=540
 ```
 

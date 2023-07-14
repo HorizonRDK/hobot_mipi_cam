@@ -102,11 +102,12 @@ add_executable(${PROJECT_NAME}
   ${SRC_PLATFORM_FILE}
 )
 
-set(BASE_LIBRARIES pthread vio dl)
+set(BASE_LIBRARIES pthread dl)
 if(PLATFORM_X3)
   set(X3_HAPI_LIB isp_algo z hbmedia isp ion multimedia iar tinyalsa cjson diag gdcbin)
 elseif(PLATFORM_J5)
-  set(X3_HAPI_LIB jsoncpp hb_api_isp vpm vio_client)
+  #set(X3_HAPI_LIB jsoncpp hb_api_isp vpm vio_client)
+  set(X3_HAPI_LIB jsoncpp hb_api_isp vio)
 else()
   set(BASE_LIBRARIES pthread vio cam dl)
   set(X3_HAPI_LIB isp_algo z hbmedia isp ion multimedia iar tinyalsa cjson diag gdcbin)
