@@ -62,8 +62,7 @@ mipi_cam.launch.py配置默认输出960*544分辨率NV12图像，发布的话题
 
 ### 使用ROS rqt_image_view
 
-这里采用rqt_image_view方式实现图像可视化，需要在PC端安装ROS2 Foxy/Humble版本。由于发布的是原始数据，需要编码JPEG图像提高传输效率，另起一个终端用于订阅 MIPI 数据并编码为JPEG。
-
+这里采用rqt_image_view方式实现图像可视化，需要在PC端安装ROS2 Humble版本。由于发布的是原始数据，需要编码JPEG图像提高传输效率，另起一个终端用于订阅 MIPI 数据并编码为JPEG。
 
 ```shell
 source /opt/tros/setup.bash
