@@ -62,12 +62,10 @@ mipi_cam.launch.py配置默认输出960*544分辨率NV12图像，发布的话题
 
 ### 使用ROS rqt_image_view
 
-这里采用rqt_image_view方式实现图像可视化，需要在PC端安装ROS2 Foxy/Humble版本。由于发布的是原始数据，需要编码JPEG图像提高传输效率，另起一个终端用于订阅 MIPI 数据并编码为JPEG。
-
+这里采用rqt_image_view方式实现图像可视化，需要在PC端安装ROS2 Humble版本。由于发布的是原始数据，需要编码JPEG图像提高传输效率，另起一个终端用于订阅 MIPI 数据并编码为JPEG。
 
 ```shell
 source /opt/tros/setup.bash
-
 ros2 launch hobot_codec hobot_codec_encode.launch.py codec_out_format:=jpeg-compressed codec_pub_topic:=/image_raw/compressed
 ```
 
@@ -95,7 +93,6 @@ ros2 launch hobot_codec hobot_codec_encode.launch.py
 ```
 另起一个终端
 ```shell
-
 source /opt/tros/local_setup.bash
 # 启动websocket
 ros2 launch websocket websocket.launch.py websocket_image_topic:=/image_jpeg websocket_only_show_image:=true
