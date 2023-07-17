@@ -60,6 +60,8 @@ if ((info.sensor_type == "IMX219") || (info.sensor_type == "imx219")) {
     src_height_ = root["pipeline0"]["isp"]["height"].asInt();
     u_int32_t ds_roi_en = root["pipeline0"]["pym"]["pym_ctrl"]["ds_roi_en"].asInt();
     bool ds_en = false;
+
+#if 0
     if ((info.width > src_width_) || (info.height > src_height_)) {
       RCLCPP_ERROR(rclcpp::get_logger("mipi_cam"),
       "[%s]-> w*h:%d*%d > src_w*src_h:%d*%d\n",
@@ -99,6 +101,52 @@ if ((info.sensor_type == "IMX219") || (info.sensor_type == "imx219")) {
       Json::StyledStreamWriter writer;
       writer.write(ofs, root);
     }
+#else
+    if ((info.width > src_width_) || (info.height > src_height_)) {
+      RCLCPP_ERROR(rclcpp::get_logger("mipi_cam"),
+      "[%s]-> w*h:%d*%d > src_w*src_h:%d*%d\n",
+      __func__, info.width, info.height, src_width_, src_height_);
+      return -1;
+    } else if ((info.width == src_width_) && (info.height == src_height_)) {
+    } else {
+      u_int32_t  tmp_width;
+      u_int32_t  tmp_height;
+      u_int32_t  roi_width;
+      u_int32_t  roi_height;
+      u_int32_t  ds_en = root["pipeline0"]["pym"]["pym_ctrl"]["ds_roi_en"].asInt();;
+      ds_pym_layer_ = 0;
+      for (u_int32_t i = 0; i < 4; i++) {
+        if (!(ds_en & (1 << i))) {
+          continue;
+        }
+        tmp_width = root["pipeline0"]["pym"]["pym_ctrl"]["ds_roi"][i]["ds_roi_region_width"].asInt();
+        tmp_height = root["pipeline0"]["pym"]["pym_ctrl"]["ds_roi"][i]["ds_roi_region_height"].asInt();
+        if ((0 == tmp_width) || (0 == tmp_height)) {
+          break;
+        } else if ((info.width == tmp_width) && (info.height == tmp_height)) {
+          ds_pym_layer_ = i;
+          use_ds_roi_ = true;
+          roi_width = tmp_width;
+          roi_height = tmp_height;
+          break;
+        } else if ((info.width <= tmp_width) && (info.height <= tmp_height)) {
+          ds_pym_layer_ = i;
+          use_ds_roi_ = true;
+          roi_width = tmp_width;
+          roi_height = tmp_height;
+        } else if ((info.width > tmp_width) || (info.height > tmp_height)) {
+          break;
+        }
+      }
+      if (use_ds_roi_) {
+        info.width = roi_width;
+        info.height = roi_height;
+      } else {
+        info.width = src_width_;
+        info.height = src_height_;
+      }
+    }
+#endif
   }catch (std::runtime_error& e) {
     RCLCPP_ERROR(rclcpp::get_logger("mipi_cam"),
        "[%s]->update json config error.\n", __func__);

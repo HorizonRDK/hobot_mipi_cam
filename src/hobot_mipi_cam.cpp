@@ -129,6 +129,7 @@ class MipiCamIml : public MipiCam {
   bool is_capturing_;
   std::shared_ptr<HobotMipiCap> mipiCap_ptr_;
   struct NodePara nodePare_;
+  MIPI_CAP_INFO_ST cap_info_;
 };
 
 std::shared_ptr<MipiCam> MipiCam::create_mipicam() {
@@ -161,12 +162,11 @@ int MipiCamIml::init(struct NodePara &para) {
       __func__, board_type.c_str());
     return -1;
   }
-  MIPI_CAP_INFO_ST cap_info;
-  cap_info.config_path = nodePare_.config_path_;
-  cap_info.sensor_type = nodePare_.video_device_name_;
-  cap_info.width = nodePare_.image_width_;
-  cap_info.height = nodePare_.image_height_;
-  cap_info.fps = nodePare_.framerate_;
+  cap_info_.config_path = nodePare_.config_path_;
+  cap_info_.sensor_type = nodePare_.video_device_name_;
+  cap_info_.width = nodePare_.image_width_;
+  cap_info_.height = nodePare_.image_height_;
+  cap_info_.fps = nodePare_.framerate_;
 
   if (mipiCap_ptr_->initEnv() < 0) {
     RCLCPP_ERROR(rclcpp::get_logger("mipi_cam"),
@@ -176,7 +176,7 @@ int MipiCamIml::init(struct NodePara &para) {
 
   auto mipicap_v = mipiCap_ptr_->listSensor();
   if (mipicap_v.size() <= 0) {
-    if (cap_info.sensor_type.length() == 0) {
+    if (cap_info_.sensor_type.length() == 0) {
       RCLCPP_ERROR(rclcpp::get_logger("mipi_cam"),
         "[%s] No camera detected!"
         " Please check if camera is connected.\r\n",
@@ -184,29 +184,33 @@ int MipiCamIml::init(struct NodePara &para) {
       return -2;
     }
   } else {
-    if ((cap_info.sensor_type.length() == 0)
-         || (cap_info.sensor_type == "default")) {
-      cap_info.sensor_type = mipicap_v[0];
+    if ((cap_info_.sensor_type.length() == 0)
+         || (cap_info_.sensor_type == "default")) {
+      cap_info_.sensor_type = mipicap_v[0];
     } else {
       bool detect_device = false;
       for (auto sensor : mipicap_v) {
-        if(strcasecmp(sensor.c_str(), cap_info.sensor_type.c_str()) == 0) {
+        if(strcasecmp(sensor.c_str(), cap_info_.sensor_type.c_str()) == 0) {
           detect_device = true;
           break;
         }
       }
       if (detect_device == false) {
-        cap_info.sensor_type = mipicap_v[0];
+        cap_info_.sensor_type = mipicap_v[0];
       }
     }
   }
-  if (mipiCap_ptr_->init(cap_info) != 0) {
+  if (mipiCap_ptr_->init(cap_info_) != 0) {
     RCLCPP_ERROR(rclcpp::get_logger("mipi_cam"),
       "[%s]->cap capture init failture.\r\n", __func__);
     return -5;
   }
+  mipiCap_ptr_->getCapInfo(cap_info_);
+  nodePare_.image_width_ = cap_info_.width;
+  nodePare_.image_height_ = cap_info_.height;
+
   RCLCPP_WARN(rclcpp::get_logger("mipi_cam"),
-    "[%s]->cap %s init success.\r\n", __func__, cap_info.sensor_type.c_str());
+    "[%s]->cap %s init success.\r\n", __func__, cap_info_.sensor_type.c_str());
   lsInit_ = true;
   return 0;
 }

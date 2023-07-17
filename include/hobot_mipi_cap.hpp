@@ -17,18 +17,9 @@
 
 #include <vector>
 #include <string>
+#include "hobot_mipi_comm.hpp"
 
 namespace mipi_cam {
-
-typedef struct {
-  std::string config_path;
-  std::string sensor_type;
-  std::string out_format_name;
-  int width;
-  int height;
-  int fps;
-} MIPI_CAP_INFO_ST;
-
 
 class HobotMipiCap {
  public:

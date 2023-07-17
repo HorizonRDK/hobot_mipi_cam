@@ -172,9 +172,21 @@
 				"us_roi_stride_uv": 640,
 				"us_roi_out_width": 640,
 				"us_roi_out_height": 480,
-				"ds_roi_en": 7,
+				"ds_roi_en": 15,
 				"ds_roi_uv_bypass": 0,
 				"ds_roi": [
+				{
+					"ds_roi_layer": 0,
+					"ds_roi_sel": 0,
+					"ds_roi_start_top": 0,
+					"ds_roi_start_left": 0,
+					"ds_roi_region_width": 960,
+					"ds_roi_region_height": 544,
+					"ds_roi_stride_y": 960,
+					"ds_roi_stride_uv": 960,
+					"ds_roi_out_width": 960,
+					"ds_roi_out_height": 544
+				},
 				{
 					"ds_roi_layer": 0,
 					"ds_roi_sel": 0,
@@ -186,6 +198,18 @@
 					"ds_roi_stride_uv": 960,
 					"ds_roi_out_width": 960,
 					"ds_roi_out_height": 540
+				},
+				{
+					"ds_roi_layer": 0,
+					"ds_roi_sel": 0,
+					"ds_roi_start_top": 0,
+					"ds_roi_start_left": 0,
+					"ds_roi_region_width": 640,
+					"ds_roi_region_height": 480,
+					"ds_roi_stride_y": 640,
+					"ds_roi_stride_uv": 640,
+					"ds_roi_out_width": 640,
+					"ds_roi_out_height": 480
 				},
 				{
 					"ds_roi_layer": 0,
@@ -222,30 +246,6 @@
 					"ds_roi_stride_uv": 120,
 					"ds_roi_out_width": 120,
 					"ds_roi_out_height": 64
-				},
-				{
-					"ds_roi_layer": 0,
-					"ds_roi_sel": 0,
-					"ds_roi_start_top": 0,
-					"ds_roi_start_left": 0,
-					"ds_roi_region_width": 60,
-					"ds_roi_region_height": 32,
-					"ds_roi_stride_y": 60,
-					"ds_roi_stride_uv": 60,
-					"ds_roi_out_width": 60,
-					"ds_roi_out_height": 32
-				},
-				{
-					"ds_roi_layer": 0,
-					"ds_roi_sel": 0,
-					"ds_roi_start_top": 0,
-					"ds_roi_start_left": 0,
-					"ds_roi_region_width": 0,
-					"ds_roi_region_height": 0,
-					"ds_roi_stride_y": 0,
-					"ds_roi_stride_uv": 0,
-					"ds_roi_out_width": 0,
-					"ds_roi_out_height": 0
 				}
 				],
 				"pre_line_int_0_set": 0,
