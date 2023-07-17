@@ -45,7 +45,7 @@ MipiCamNode::~MipiCamNode() {
 
 void MipiCamNode::getParams() {
   // declare params
-  this->declare_parameter("config_path", "./lib/mipi_cam/config");
+  this->declare_parameter("config_path", "/opt/tros/lib/mipi_cam/config/");
   this->declare_parameter("channel", 0);
   this->declare_parameter("camera_info_url", "");
   this->declare_parameter("framerate", 30.0);  // 10.0);
@@ -54,9 +54,8 @@ void MipiCamNode::getParams() {
   this->declare_parameter("image_width", 1920);   // 640);
   this->declare_parameter("io_method", "ros");
   this->declare_parameter("out_format", "bgr8");   // nv12
-  this->declare_parameter("video_device", "");  // "IMX415");//"F37");
-  this->declare_parameter("camera_calibration_file_path",
-                          "/opt/tros/lib/mipi_cam/config/F37_calibration.yaml");
+  this->declare_parameter("video_device", "");  // "F37");
+  this->declare_parameter("camera_calibration_file_path", "");
   auto parameters_client = std::make_shared<rclcpp::SyncParametersClient>(this);
   for (auto& parameter :
        parameters_client->get_parameters({"config_path",
@@ -81,10 +80,13 @@ void MipiCamNode::getParams() {
       nodePare_.camera_info_url_ = parameter.value_to_string();
     } else if (parameter.get_name() == "out_format") {
       nodePare_.out_format_name_ = parameter.value_to_string();
+      RCLCPP_INFO(rclcpp::get_logger("mipi_node"),
+                  "out_format value: %s",
+                  parameter.value_to_string().c_str());
     } else if (parameter.get_name() == "frame_id") {
       frame_id_ = parameter.value_to_string();
     } else if (parameter.get_name() == "framerate") {
-      RCLCPP_WARN(rclcpp::get_logger("mipi_node"),
+      RCLCPP_INFO(rclcpp::get_logger("mipi_node"),
                   "framerate: %f",
                   parameter.as_double());
       nodePare_.framerate_ = parameter.as_double();
@@ -107,6 +109,9 @@ void MipiCamNode::getParams() {
                   parameter.value_to_string().c_str());
     } else if (parameter.get_name() == "camera_calibration_file_path") {
       nodePare_.camera_calibration_file_path_ = parameter.value_to_string();
+      RCLCPP_INFO(rclcpp::get_logger("mipi_node"),
+                  "camera_calibration_file_path value: %s",
+                  parameter.value_to_string().c_str());
     } else {
       RCLCPP_WARN(rclcpp::get_logger("mipi_node"),
                   "Invalid parameter name: %s",
@@ -116,15 +121,14 @@ void MipiCamNode::getParams() {
 }
 
 void MipiCamNode::init() {
-  if (m_bIsInit)
-    return;
+  if (m_bIsInit) return;
+
   mipiCam_ptr_ = MipiCam::create_mipicam();
   if (!mipiCam_ptr_ || mipiCam_ptr_->init(nodePare_)) {
-     RCLCPP_ERROR(rclcpp::get_logger("mipi_node"),
+     RCLCPP_ERROR_ONCE(rclcpp::get_logger("mipi_node"),
               "[%s]->mipinode init failure.\n",
               __func__);
-    // rclcpp::shutdown();
-    exit(0);
+    rclcpp::shutdown();
   }
   if (io_method_name_.compare("ros") == 0) {
     image_pub_ =
@@ -145,10 +149,9 @@ void MipiCamNode::init() {
   camera_calibration_info_->header.frame_id = frame_id_;
   RCLCPP_INFO(
       rclcpp::get_logger("mipi_node"),
-      "[MipiCamNode::%s]->Initing '%s' (%s) at %dx%d via %s at %i FPS",
+      "[MipiCamNode::%s]->Initing '%s' at %dx%d via %s at %i FPS",
       __func__,
       nodePare_.config_path_.c_str(),
-      nodePare_.video_device_name_.c_str(),
       nodePare_.image_width_,
       nodePare_.image_height_,
       io_method_name_.c_str(),
@@ -166,8 +169,7 @@ void MipiCamNode::init() {
   // start the camera
   if (0 != mipiCam_ptr_->start()) {
     RCLCPP_ERROR_ONCE(rclcpp::get_logger("mipi_node"),
-                      "video dev '%s' start failed!",
-                       nodePare_.video_device_name_.c_str());
+                      "mipi camera start failed!");
     rclcpp::shutdown();
     return;
   }
@@ -189,9 +191,6 @@ void MipiCamNode::init() {
   }
   RCLCPP_INFO_STREAM(rclcpp::get_logger("mipi_node"),
                      "starting timer " << period_ms);
-  RCLCPP_WARN(rclcpp::get_logger("mipi_node"),
-              "[%s]->mipinode init sucess.\n",
-              __func__);
   m_bIsInit = 1;
 }
 
@@ -266,7 +265,10 @@ void MipiCamNode::save_yuv(const builtin_interfaces::msg::Time stamp,
   std::string yuv_path = "./yuv/";
   uint64_t time_stamp = (stamp.sec * 1000 + stamp.nanosec / 1000000);;
   if (access(yuv_path.c_str(), F_OK) == 0) {
+
     std::string yuv_file = "./yuv/" + std::to_string(time_stamp) + ".yuv";
+    RCLCPP_INFO(rclcpp::get_logger("mipi_node"),
+      "save yuv image: %s", yuv_file.c_str());
     std::ofstream out(yuv_file, std::ios::out|std::ios::binary);
     out.write(reinterpret_cast<char*>(data), data_size);
     out.close();

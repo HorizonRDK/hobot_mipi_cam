@@ -28,12 +28,12 @@ def generate_launch_description():
     
     return LaunchDescription([
         DeclareLaunchArgument(
-            "config_path", 
-            default_value=TextSubstitution(text=""),
+            "mipi_config_path", 
+            default_value=TextSubstitution(text="/opt/tros/lib/mipi_cam/config/"),
             description='mipi camera calibration file path'),
         DeclareLaunchArgument(
             'mipi_camera_calibration_file_path',
-            default_value='/opt/tros/lib/mipi_cam/config/F37_calibration.yaml',
+            default_value='default',
             description='mipi camera calibration file path'),
         DeclareLaunchArgument(
             'mipi_out_format',
@@ -41,11 +41,11 @@ def generate_launch_description():
             description='mipi camera out format'),
         DeclareLaunchArgument(
             'mipi_image_width',
-            default_value='1920',
+            default_value='960',
             description='mipi camera out image width'),
         DeclareLaunchArgument(
             'mipi_image_height',
-            default_value='1080',
+            default_value='544',
             description='mipi camera out image height'),
         DeclareLaunchArgument(
             'mipi_io_method',
@@ -53,7 +53,7 @@ def generate_launch_description():
             description='mipi camera out io_method'),
         DeclareLaunchArgument(
             'mipi_video_device',
-            default_value='all',
+            default_value='default',
             description='mipi camera device'),
         # 启动图片发布pkg
         Node(
@@ -61,8 +61,7 @@ def generate_launch_description():
             executable='mipi_cam',
             output='screen',
             parameters=[
-                {"config_path": [config_path, "/",
-                                  LaunchConfiguration('config_path')]},
+                {"config_path": LaunchConfiguration('mipi_config_path')},
                 {"camera_calibration_file_path": LaunchConfiguration(
                     'mipi_camera_calibration_file_path')},
                 {"out_format": LaunchConfiguration('mipi_out_format')},

@@ -66,10 +66,14 @@ if(PLATFORM_X3)
     src/x3/x3_sdk_swap/include
     src/x3/sensor
   )
-elseif(PLATFORM_J5)
-  message("build platform J5")
-  add_definitions(-DPLATFORM_J5)
-  set(PREFIX_PATH j5)
+elseif(PLATFORM_X5ultra)
+  message("build platform x5ultra")
+  add_definitions(-DPLATFORM_X5ultra)
+  set(PREFIX_PATH x5ultra)
+  include_directories(${CMAKE_SYSROOT}/usr/include/cam
+    ${CMAKE_SYSROOT}/usr/include/isp
+    ${CMAKE_SYSROOT}/usr/include/vps/vpm
+  )
 else()
   message("invalid platform, build platform X3 default")
   add_definitions(-DPLATFORM_X3)
@@ -102,11 +106,12 @@ add_executable(${PROJECT_NAME}
   ${SRC_PLATFORM_FILE}
 )
 
-set(BASE_LIBRARIES pthread vio dl)
+set(BASE_LIBRARIES pthread dl)
 if(PLATFORM_X3)
   set(X3_HAPI_LIB isp_algo z hbmedia isp ion multimedia iar tinyalsa cjson diag gdcbin)
-elseif(PLATFORM_J5)
-  set(X3_HAPI_LIB jsoncpp hb_api_isp vpm vio_client)
+elseif(PLATFORM_X5ultra)
+  #set(X3_HAPI_LIB jsoncpp hb_api_isp vpm vio_client)
+  set(X3_HAPI_LIB jsoncpp hb_api_isp vio)
 else()
   set(BASE_LIBRARIES pthread vio cam dl)
   set(X3_HAPI_LIB isp_algo z hbmedia isp ion multimedia iar tinyalsa cjson diag gdcbin)
@@ -146,9 +151,9 @@ if(PLATFORM_X3)
     ${PROJECT_SOURCE_DIR}/config/x3/
     DESTINATION lib/${PROJECT_NAME}/config/
   )
-elseif(PLATFORM_J5)
+elseif(PLATFORM_X5ultra)
   install(DIRECTORY
-    ${PROJECT_SOURCE_DIR}/config/j5/
+    ${PROJECT_SOURCE_DIR}/config/x5ultra/
   DESTINATION lib/${PROJECT_NAME}/config/
 )
 endif()

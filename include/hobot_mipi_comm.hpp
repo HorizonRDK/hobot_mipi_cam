@@ -37,6 +37,15 @@ struct NodePara {
   int framerate_;
 };
 
+typedef struct {
+  std::string config_path;
+  std::string sensor_type;
+  std::string out_format_name;
+  int width;
+  int height;
+  int fps;
+} MIPI_CAP_INFO_ST;
+
 typedef struct sensor_id {
   int i2c_bus;           // sensor挂在哪条总线上
   int i2c_dev_addr;      // sensor i2c设备地址

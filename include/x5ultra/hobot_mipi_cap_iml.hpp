@@ -17,6 +17,7 @@
 #include <vector>
 #include <string>
 #include "hobot_mipi_cap.hpp"
+#include "hobot_mipi_comm.hpp"
 
 namespace mipi_cam {
 
@@ -27,11 +28,7 @@ class HobotMipiCapIml : public HobotMipiCap {
 
   // 初始化设备环境，如X3的sensor GPIO配置和时钟配置
   // 返回值：0，成功；-1，配置失败
-  virtual int initEnv(std::string sensor);
-
-  // 复位sensor和时钟，如X3的sensor GPIO配置和时钟配置
-  // 返回值：0，成功；-1，配置失败
-  virtual int resetSensor(std::string sensor);
+  virtual int initEnv();
 
   // 初始化相关sensor的VIO pipeline；
   // 输入参数：info--sensor的配置参数。
@@ -55,10 +52,7 @@ class HobotMipiCapIml : public HobotMipiCap {
 
   // 如果有 vps ，就 输出vps 的分层数据
   int getFrame(int nChnID, int* nVOutW, int* nVOutH,
-        void* buf, unsigned int bufsize, unsigned int*, uint64_t&);
-
-  int parseConfig(std::string config_path, std::string sensor_name,
-                  int w, int h, int fps);
+        void* buf, unsigned int bufsize, unsigned int*, uint64_t&, bool gray = false);
 
   int UpdateConfig(MIPI_CAP_INFO_ST &info);
 
@@ -74,7 +68,12 @@ class HobotMipiCapIml : public HobotMipiCap {
 
 
  protected:
-  // virtual int checkConfig(std::string sensor_name, int w, int h, int fps);
+  //遍历初始话的mipi host.
+  void listMipiHost(std::vector<int> &mipi_hosts, std::vector<int> &started,
+                    std::vector<int> &stoped);
+  // 探测已经连接的sensor
+  bool detectSensor(SENSOR_ID_T &sensor_info);
+  
   bool started_ = false;
   std::string vio_cfg_file_;
   std::string cam_cfg_file_;
@@ -90,53 +89,19 @@ class HobotMipiCapIml : public HobotMipiCap {
   MIPI_CAP_INFO_ST cap_info_;
 };
 
-class HobotMipiCapImlRDKJ5 : public HobotMipiCapIml {
+class HobotMipiCapImlRDKX5ultra : public HobotMipiCapIml {
  public:
-  HobotMipiCapImlRDKJ5() {}
-  ~HobotMipiCapImlRDKJ5() {}
+  HobotMipiCapImlRDKX5ultra() {}
+  ~HobotMipiCapImlRDKX5ultra() {}
 
   // 初始化设备环境，如J5的sensor GPIO配置和时钟配置
   // 返回值：0，成功；-1，配置失败
-  int initEnv(std::string sensor);
-
-  // 复位sensor和时钟，如J5的sensor GPIO配置和时钟配置
-  // 返回值：0，成功；-1，配置失败
-  int resetSensor(std::string sensor);
-
-  // 判断设备是否支持遍历设备连接的sensor
-  // 返回值：true,支持；false，不支持
-  bool hasListSensor();
-
-  // 遍历设备连接的sensor
-  std::vector<std::string> listSensor();
-
-  // 确认支持的分辨率和帧率。
-  // int checkConfig(std::string sensor_name, int w, int h, int fps);
-};
-
-
-class HobotMipiCapImlJ5Evm : public HobotMipiCapIml {
- public:
-  HobotMipiCapImlJ5Evm() {}
-  ~HobotMipiCapImlJ5Evm() {}
-
-  // 初始化设备环境，如J5的sensor GPIO配置和时钟配置
-  // 返回值：0，成功；-1，配置失败
-  int initEnv(std::string sensor);
-
-  // 复位sensor和时钟，如J5的sensor GPIO配置和时钟配置
-  // 返回值：0，成功；-1，配置失败
-  int resetSensor(std::string sensor);
-
-  // 判断设备是否支持遍历设备连接的sensor
-  // 返回值：true,支持；false，不支持
-  bool hasListSensor();
+  int initEnv();
 
   // 遍历设备连接的sensor
   std::vector<std::string> listSensor();
 
 };
-
 
 }  // namespace mipi_cam
 

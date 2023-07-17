@@ -17,17 +17,9 @@
 
 #include <vector>
 #include <string>
+#include "hobot_mipi_comm.hpp"
 
 namespace mipi_cam {
-
-typedef struct {
-  std::string config_path;
-  std::string sensor_type;
-  int width;
-  int height;
-  int fps;
-} MIPI_CAP_INFO_ST;
-
 
 class HobotMipiCap {
  public:
@@ -36,7 +28,7 @@ class HobotMipiCap {
 
   // 初始化设备环境，如X3的sensor GPIO配置和时钟配置
   // 返回值：0，成功；-1，配置失败
-  virtual int initEnv(std::string sensor) = 0;
+  virtual int initEnv() = 0;
 
   // 初始化相关sensor的VIO pipeline；
   // 输入参数：MIPI_CAP_INFO_ST的结构信息。
@@ -60,12 +52,7 @@ class HobotMipiCap {
 
   // 如果有 vps ，就 输出vps 的分层数据
   virtual int getFrame(int nChnID, int* nVOutW, int* nVOutH,
-      void* buf, unsigned int bufsize, unsigned int*, uint64_t&) = 0;
-
-  // 检测对应的pipeline是否已经打开；
-  // 输入参数：pipeline_idx pipeline的group ID。
-  // 返回值：true，已经打开；false，没有打开。
-  virtual bool checkPipelineOpened(int pipeline_idx) = 0;
+      void* buf, unsigned int bufsize, unsigned int*, uint64_t&, bool gray = false) = 0;
 
   // 获取cap的info信息；
   // 输入输出参数：MIPI_CAP_INFO_ST的结构信息。
