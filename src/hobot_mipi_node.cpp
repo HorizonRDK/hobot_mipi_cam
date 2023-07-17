@@ -53,7 +53,7 @@ void MipiCamNode::getParams() {
   this->declare_parameter("image_height", 1080);  // 480);
   this->declare_parameter("image_width", 1920);   // 640);
   this->declare_parameter("io_method", "ros");
-  this->declare_parameter("out_format", "nv12");   // nv12
+  this->declare_parameter("out_format", "bgr8");   // nv12
   this->declare_parameter("video_device", "");  // "F37");
   this->declare_parameter("camera_calibration_file_path", "");
   auto parameters_client = std::make_shared<rclcpp::SyncParametersClient>(this);
