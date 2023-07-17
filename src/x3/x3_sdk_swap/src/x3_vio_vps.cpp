@@ -101,11 +101,11 @@ int x3_vps_chn_init(int vps_grp_id, int vps_chn_id, VPS_CHN_ATTR_S *chn_attr) {
     int ret = 0;
 	ret = HB_VPS_SetChnAttr(vps_grp_id, vps_chn_id, chn_attr);
 	if (ret) {
-		RCLCPP_INFO(rclcpp::get_logger("mipi_cam"),
+		RCLCPP_ERROR(rclcpp::get_logger("mipi_cam"),
 		   "[%s]->HB_VPS_SetChnAttr gID=%d,cID=%d,w:h=%d:%d error, ret:%d.\n",
 			__func__,vps_grp_id, vps_chn_id, chn_attr->width,chn_attr->height,ret);
 	} else {
-		RCLCPP_ERROR(rclcpp::get_logger("mipi_cam"),
+		RCLCPP_INFO(rclcpp::get_logger("mipi_cam"),
 		  "[%s]->set ipu chn Attr ok: gID=%d, cID=%d,w:h=%d:%d.\n",
 			__func__,vps_grp_id, vps_chn_id, chn_attr->width,chn_attr->height);
 		HB_VPS_EnableChn(vps_grp_id, vps_chn_id);
