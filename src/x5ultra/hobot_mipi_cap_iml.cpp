@@ -131,14 +131,14 @@ int HobotMipiCapIml::init(MIPI_CAP_INFO_ST &info) {
     return -1;
   }
   pipeline_idx_ = pipeline_id;
-  ret = hb_vio_cfg_check(vio_cfg_file_.c_str(), cam_cfg_file_.c_str(),
-         cam_cfg_index_);
-  if (ret < 0) {
-    RCLCPP_ERROR(rclcpp::get_logger("mipi_cam"),
-      "vcs check cfg fail vpm:%s\n vin:%s\n index:%d,error:%d\n",
-      cam_cfg_file_.c_str(), vio_cfg_file_.c_str(), cam_cfg_index_, ret);
-    return -1;
-  }
+  // ret = hb_vio_cfg_check(vio_cfg_file_.c_str(), cam_cfg_file_.c_str(),
+  //       cam_cfg_index_);
+  // if (ret < 0) {
+  //  RCLCPP_ERROR(rclcpp::get_logger("mipi_cam"),
+  //    "vcs check cfg fail vpm:%s\n vin:%s\n index:%d,error:%d\n",
+  //    cam_cfg_file_.c_str(), vio_cfg_file_.c_str(), cam_cfg_index_, ret);
+  //  return -1;
+  // }
   ret = hb_vio_init(vio_cfg_file_.c_str());
   if (ret != 0) {
     RCLCPP_ERROR(rclcpp::get_logger("mipi_cam"),

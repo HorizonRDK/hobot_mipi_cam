@@ -72,8 +72,8 @@
 				"suffix_vb_val": 20,
 				"prefix_vb_val": 2,
 				"pixel_num_before_sol": 16,
-				"gs_max_layer_en": 5,
-				"gs_en": 1,
+				"gs_max_layer_en": 0,
+				"gs_en": 0,
 				"gs_uv_bypass": 0,
 				"gauss_info": [
 				{
@@ -117,8 +117,8 @@
 					"gs_stride_uv": 0
 				}
 				],
-				"bl_max_layer_en": 5,
-				"bl_en": 1,
+				"bl_max_layer_en": 0,
+				"bl_en": 0,
 				"bl_uv_bypass": 0,
 				"bilinear_info": [
 				{
@@ -172,7 +172,7 @@
 				"us_roi_stride_uv": 640,
 				"us_roi_out_width": 640,
 				"us_roi_out_height": 480,
-				"ds_roi_en": 1,
+				"ds_roi_en": 7,
 				"ds_roi_uv_bypass": 0,
 				"ds_roi": [
 				{

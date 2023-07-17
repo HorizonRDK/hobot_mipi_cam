@@ -70,6 +70,10 @@ elseif(PLATFORM_X5ultra)
   message("build platform x5ultra")
   add_definitions(-DPLATFORM_X5ultra)
   set(PREFIX_PATH x5ultra)
+  include_directories(${CMAKE_SYSROOT}/usr/include/cam
+    ${CMAKE_SYSROOT}/usr/include/isp
+    ${CMAKE_SYSROOT}/usr/include/vps/vpm
+  )
 else()
   message("invalid platform, build platform X3 default")
   add_definitions(-DPLATFORM_X3)
