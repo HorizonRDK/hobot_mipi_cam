@@ -23,13 +23,11 @@
 namespace mipi_cam {
 std::shared_ptr<HobotMipiCap> createMipiCap(const std::string &dev_name) {
   std::shared_ptr<HobotMipiCap> cap_ptr;
-  if (dev_name == "RDKJ5") {
-    cap_ptr = std::make_shared<HobotMipiCapImlRDKJ5>();
-  } else if (dev_name == "j5evm") {
-    cap_ptr = std::make_shared<HobotMipiCapImlJ5Evm>();
+  if (dev_name == "RDKX5ultra") {
+    cap_ptr = std::make_shared<HobotMipiCapImlRDKX5ultra>();
   } else {
     RCLCPP_ERROR(rclcpp::get_logger("mipi_factory"),
-       "This is't support device type, only support RDKJ5 j5evm.\n");
+       "This is't support device type, only support RDKX5ultra.\n");
   }
   return cap_ptr;
 }
@@ -45,11 +43,8 @@ std::string getBoardType() {
   std::string board_type_str = "";
   if (auto_detect) {
     switch (board_type) {
-      case 1283:
-        board_type_str = "j5evm";
-        break;
       case 2560:
-        board_type_str = "RDKJ5";
+        board_type_str = "RDKX5ultra";
         break;
       default:
         break;

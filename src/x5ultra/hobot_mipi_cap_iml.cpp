@@ -32,13 +32,9 @@ namespace mipi_cam {
 int HobotMipiCapIml::UpdateConfig(MIPI_CAP_INFO_ST &info) {
   RCLCPP_DEBUG(rclcpp::get_logger("mipi_cam"),
       "config_path : %s.\n", info.config_path.c_str());
-  if ((info.sensor_type == "AR0820") || (info.sensor_type == "ar0820")) {
-    vio_cfg_file_ = info.config_path + "/ar0820_cim_isp0_4k/vpm_config.json";
-    cam_cfg_file_ = info.config_path + "/ar0820_cim_isp0_4k//hb_j5dev.json";
-    cam_cfg_index_ = 0;
-  } else if ((info.sensor_type == "IMX219") || (info.sensor_type == "imx219")) {
+if ((info.sensor_type == "IMX219") || (info.sensor_type == "imx219")) {
     vio_cfg_file_ = info.config_path + "/imx219/vpm_config.json";
-    cam_cfg_file_ = info.config_path + "/imx219/hb_j5dev.json";
+    cam_cfg_file_ = info.config_path + "/imx219/hb_x3ultra_dev.json";
     cam_cfg_index_ = 0;
   } else {
     RCLCPP_ERROR(rclcpp::get_logger("mipi_cam"),
@@ -512,7 +508,7 @@ bool HobotMipiCapIml::detectSensor(SENSOR_ID_T &sensor_info) {
   return false;
 }
 
-int HobotMipiCapImlRDKJ5::initEnv() {
+int HobotMipiCapImlRDKX5ultra::initEnv() {
   std::vector<int> mipi_hosts = {0,1};
   std::vector<int> mipi_started;
   std::vector<int> mipi_stoped;
@@ -549,56 +545,12 @@ int HobotMipiCapImlRDKJ5::initEnv() {
   return 0;
 }
 
-std::vector<std::string> HobotMipiCapImlRDKJ5::listSensor() {
+std::vector<std::string> HobotMipiCapImlRDKX5ultra::listSensor() {
 
   // mipi sensor的信息数组
   SENSOR_ID_T sensor_id_list[] = {
     {5, 0x10, I2C_ADDR_16, 0x0000, "imx219"},
     {6, 0x10, I2C_ADDR_16, 0x0000, "imx219"},
-  };
-  std::vector<std::string> device;
-
-  for (auto sensor_id : sensor_id_list) {
-    if (detectSensor(sensor_id)) {
-      device.push_back(sensor_id.sensor_name);
-    }
-  }
-  return device;
-}
-
-int HobotMipiCapImlJ5Evm::initEnv() {
-  std::vector<int> mipi_hosts = {0,1};
-  std::vector<int> mipi_started;
-  std::vector<int> mipi_stoped;
-  listMipiHost(mipi_hosts, mipi_started, mipi_stoped);
-  if (mipi_stoped.size() == 0) {
-    return -1;
-  }
-  std::vector<std::string> sys_cmds = {
-    "echo 455 > /sys/class/gpio/export",
-    "echo out > /sys/class/gpio/gpio455/direction",
-    "echo 0 > /sys/class/gpio/gpio455/value",
-    "sleep 0.2",
-    "echo 1 > /sys/class/gpio/gpio455/value",
-    "echo 455 > /sys/class/gpio/unexport",
-    "echo 454 > /sys/class/gpio/export",
-    "echo out > /sys/class/gpio/gpio454/direction",
-    "echo 0 > /sys/class/gpio/gpio454/value",
-    "sleep 0.2",
-    "echo 1 > /sys/class/gpio/gpio454/value",
-    "echo 454 > /sys/class/gpio/unexport",
-  };
-  for (const auto& sys_cmd : sys_cmds) {
-    system(sys_cmd.data());
-  }
-  return 0;
-}
-
-std::vector<std::string> HobotMipiCapImlJ5Evm::listSensor() {
-
-  // mipi sensor的信息数组
-  SENSOR_ID_T sensor_id_list[] = {
-    {1, 0x18, I2C_ADDR_8, 0x00, "ar0820"},
   };
   std::vector<std::string> device;
 

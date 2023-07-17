@@ -21,11 +21,11 @@
 
 namespace mipi_cam {
   // 创建sensor数据捕抓对象HobotMipiCap,工厂模式。
-  // dev_name--板级类型名称，如x3pi,x3sdb,j5pi,j5dvb。
+  // dev_name--板级类型名称，如RDKX3,RDKX3_m,x3sdb.
   std::shared_ptr<HobotMipiCap> createMipiCap(const std::string &dev_name);
 
   // 检测当前板子的类型，。
-  // 返回值--板级类型名称，如x3pi,x3sdb,j5pi,j5dvb。
+  // 返回值--板级类型名称，如RDKX3,RDKX3_m,x3sdb.
   std::string getBoardType();
 
 }  // namespace mipi_cam

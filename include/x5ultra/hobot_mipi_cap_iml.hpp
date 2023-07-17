@@ -89,10 +89,10 @@ class HobotMipiCapIml : public HobotMipiCap {
   MIPI_CAP_INFO_ST cap_info_;
 };
 
-class HobotMipiCapImlRDKJ5 : public HobotMipiCapIml {
+class HobotMipiCapImlRDKX5ultra : public HobotMipiCapIml {
  public:
-  HobotMipiCapImlRDKJ5() {}
-  ~HobotMipiCapImlRDKJ5() {}
+  HobotMipiCapImlRDKX5ultra() {}
+  ~HobotMipiCapImlRDKX5ultra() {}
 
   // 初始化设备环境，如J5的sensor GPIO配置和时钟配置
   // 返回值：0，成功；-1，配置失败
@@ -102,22 +102,6 @@ class HobotMipiCapImlRDKJ5 : public HobotMipiCapIml {
   std::vector<std::string> listSensor();
 
 };
-
-
-class HobotMipiCapImlJ5Evm : public HobotMipiCapIml {
- public:
-  HobotMipiCapImlJ5Evm() {}
-  ~HobotMipiCapImlJ5Evm() {}
-
-  // 初始化设备环境，如J5的sensor GPIO配置和时钟配置
-  // 返回值：0，成功；-1，配置失败
-  int initEnv();
-
-  // 遍历设备连接的sensor
-  std::vector<std::string> listSensor();
-
-};
-
 
 }  // namespace mipi_cam
 
