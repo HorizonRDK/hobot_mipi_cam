@@ -557,7 +557,7 @@ bool HobotMipiCapIml::detectSensor(SENSOR_ID_T &sensor_info) {
 }
 
 int HobotMipiCapImlRDKX5ultra::initEnv() {
-  std::vector<int> mipi_hosts = {0,1};
+  std::vector<int> mipi_hosts = {0};
   std::vector<int> mipi_started;
   std::vector<int> mipi_stoped;
   listMipiHost(mipi_hosts, mipi_started, mipi_stoped);
