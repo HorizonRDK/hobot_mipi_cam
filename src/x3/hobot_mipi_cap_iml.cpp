@@ -382,7 +382,7 @@ bool HobotMipiCapIml::checkPipelineOpened(int pipeline_idx) {
       std::string pipe_line_info =
             "pipe " + std::to_string(pipeline_idx) + " not inited";
       if (!cfg_info.compare(pipe_line_info)) {
-        RCLCPP_ERROR(rclcpp::get_logger("mipi_cam"),
+        RCLCPP_INFO(rclcpp::get_logger("mipi_cam"),
           "mipi camera the pipeline %d is idle.\n", pipeline_idx);
         return false;
       }

@@ -72,8 +72,8 @@ int x3_vp_free(vp_param_t *param) {
 
 int x3_vp_deinit() {
     int ret = HB_VP_Exit();
-    if (!ret) {
-        RCLCPP_ERROR(rclcpp::get_logger("mipi_cam"),
+    if (ret != 0) {
+        RCLCPP_INFO(rclcpp::get_logger("mipi_cam"),
           "hb_vp_deinit success\n");
     } else {
         RCLCPP_ERROR(rclcpp::get_logger("mipi_cam"),
