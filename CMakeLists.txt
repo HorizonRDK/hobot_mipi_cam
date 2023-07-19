@@ -108,7 +108,7 @@ add_executable(${PROJECT_NAME}
 
 set(BASE_LIBRARIES pthread dl)
 if(PLATFORM_X3)
-  set(X3_HAPI_LIB isp_algo z hbmedia isp ion multimedia iar tinyalsa cjson diag gdcbin)
+  set(X3_HAPI_LIB isp_algo z hbmedia isp ion multimedia iar tinyalsa cjson diag gdcbin  jsoncpp)
 elseif(PLATFORM_Rdkultra)
   #set(X3_HAPI_LIB jsoncpp hb_api_isp vpm vio_client)
   set(X3_HAPI_LIB jsoncpp hb_api_isp vio)

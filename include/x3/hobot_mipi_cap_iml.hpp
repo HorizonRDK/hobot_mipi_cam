@@ -16,6 +16,7 @@
 #define HOBOT_MIPI_CAP_IML_HPP_
 #include <vector>
 #include <string>
+#include <map>
 #include "hobot_mipi_cap.hpp"
 #include "hobot_mipi_comm.hpp"
 #include "x3_sdk_wrap.h"
@@ -48,9 +49,6 @@ class HobotMipiCapIml : public HobotMipiCap {
   // 返回值：0，停止成功；-1，停止失败。
   int stop();
 
-  // 遍历设备连接的sensor
-  virtual std::vector<std::string> listSensor();
-
   // 如果有 vps ，就 输出vps 的分层数据
   int getFrame(int nChnID, int* nVOutW, int* nVOutH,
         void* buf, unsigned int bufsize, unsigned int*, uint64_t&, bool gray = false);
@@ -68,13 +66,15 @@ class HobotMipiCapIml : public HobotMipiCap {
   int getCapInfo(MIPI_CAP_INFO_ST &info);
 
  protected:
-  virtual int getSensorBus(std::string &sensor_name);
   //遍历初始话的mipi host.
   void listMipiHost(std::vector<int> &mipi_hosts, std::vector<int> &started,
                     std::vector<int> &stoped);
+  bool analysis_board_config();
 
   // 探测已经连接的sensor
-  bool detectSensor(SENSOR_ID_T &sensor_info);
+  bool detectSensor(SENSOR_ID_T &sensor_info, int i2c_bus);
+
+  int selectSensor(std::string &sensor, int &host, int &i2c_bus);
 
   bool m_inited_ = false;
   bool started_ = false;
@@ -83,38 +83,12 @@ class HobotMipiCapIml : public HobotMipiCap {
   int vin_enable_ = true;
   int vps_enable_ = true;
   MIPI_CAP_INFO_ST cap_info_;
-};
-
-class HobotMipiCapImlRDKX3 : public HobotMipiCapIml {
- public:
-  HobotMipiCapImlRDKX3() {}
-  ~HobotMipiCapImlRDKX3() {}
-
-  // 初始化设备环境，如X3的sensor GPIO配置和时钟配置
-  // 返回值：0，成功；-1，配置失败
-  int initEnv();
-
-  // 遍历设备连接的sensor
-  std::vector<std::string> listSensor();
-
-  // 获取对应board相关的i2c-bus id。
-  int getSensorBus(std::string &sensor_name);
-};
-
-class HobotMipiCapImlRDKX3_m : public HobotMipiCapIml {
- public:
-  HobotMipiCapImlRDKX3_m() {}
-  ~HobotMipiCapImlRDKX3_m() {}
-
-  // 初始化设备环境，如X3的sensor GPIO配置和时钟配置
-  // 返回值：0，成功；-1，配置失败
-  int initEnv();
-
-  // 遍历设备连接的sensor
-  std::vector<std::string> listSensor();
-
-  // 获取对应board相关的i2c-bus id。
-  int getSensorBus(std::string &sensor_name);
+  int entry_index_ = 0;
+  int sensor_bus_ = 2;
+  std::vector<int> mipi_started_;
+  std::vector<int> mipi_stoped_;
+  std::map<int, BOARD_CONFIG_ST> board_config_m_;
+  std::map<int, std::vector<std::string>> host_sensor_m_;
 };
 
 class HobotMipiCapImlSDB : public HobotMipiCapIml {
@@ -126,11 +100,6 @@ class HobotMipiCapImlSDB : public HobotMipiCapIml {
   // 返回值：0，成功；-1，配置失败
   int initEnv();
 
-  // 遍历设备连接的sensor
-  std::vector<std::string> listSensor();
-
-  // 获取对应board相关的i2c-bus id。
-  int getSensorBus(std::string &sensor_name);
 };
 
 

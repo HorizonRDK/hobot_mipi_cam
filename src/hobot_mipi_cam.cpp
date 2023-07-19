@@ -174,32 +174,6 @@ int MipiCamIml::init(struct NodePara &para) {
     return -1;
   }
 
-  auto mipicap_v = mipiCap_ptr_->listSensor();
-  if (mipicap_v.size() <= 0) {
-    if (cap_info_.sensor_type.length() == 0) {
-      RCLCPP_ERROR(rclcpp::get_logger("mipi_cam"),
-        "[%s] No camera detected!"
-        " Please check if camera is connected.\r\n",
-        __func__);
-      return -2;
-    }
-  } else {
-    if ((cap_info_.sensor_type.length() == 0)
-         || (cap_info_.sensor_type == "default")) {
-      cap_info_.sensor_type = mipicap_v[0];
-    } else {
-      bool detect_device = false;
-      for (auto sensor : mipicap_v) {
-        if(strcasecmp(sensor.c_str(), cap_info_.sensor_type.c_str()) == 0) {
-          detect_device = true;
-          break;
-        }
-      }
-      if (detect_device == false) {
-        cap_info_.sensor_type = mipicap_v[0];
-      }
-    }
-  }
   if (mipiCap_ptr_->init(cap_info_) != 0) {
     RCLCPP_ERROR(rclcpp::get_logger("mipi_cam"),
       "[%s]->cap capture init failture.\r\n", __func__);
