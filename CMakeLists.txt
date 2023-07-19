@@ -66,10 +66,10 @@ if(PLATFORM_X3)
     src/x3/x3_sdk_swap/include
     src/x3/sensor
   )
-elseif(PLATFORM_X5ultra)
-  message("build platform x5ultra")
-  add_definitions(-DPLATFORM_X5ultra)
-  set(PREFIX_PATH x5ultra)
+elseif(PLATFORM_Rdkultra)
+  message("build platform rdkultra")
+  add_definitions(-DPLATFORM_Rdkultra)
+  set(PREFIX_PATH rdkultra)
   include_directories(${CMAKE_SYSROOT}/usr/include/cam
     ${CMAKE_SYSROOT}/usr/include/isp
     ${CMAKE_SYSROOT}/usr/include/vps/vpm
@@ -109,7 +109,7 @@ add_executable(${PROJECT_NAME}
 set(BASE_LIBRARIES pthread dl)
 if(PLATFORM_X3)
   set(X3_HAPI_LIB isp_algo z hbmedia isp ion multimedia iar tinyalsa cjson diag gdcbin)
-elseif(PLATFORM_X5ultra)
+elseif(PLATFORM_Rdkultra)
   #set(X3_HAPI_LIB jsoncpp hb_api_isp vpm vio_client)
   set(X3_HAPI_LIB jsoncpp hb_api_isp vio)
 else()
@@ -151,9 +151,9 @@ if(PLATFORM_X3)
     ${PROJECT_SOURCE_DIR}/config/x3/
     DESTINATION lib/${PROJECT_NAME}/config/
   )
-elseif(PLATFORM_X5ultra)
+elseif(PLATFORM_Rdkultra)
   install(DIRECTORY
-    ${PROJECT_SOURCE_DIR}/config/x5ultra/
+    ${PROJECT_SOURCE_DIR}/config/rdkultra/
   DESTINATION lib/${PROJECT_NAME}/config/
 )
 endif()

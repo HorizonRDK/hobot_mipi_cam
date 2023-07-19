@@ -12,7 +12,7 @@
 | 2    | GC4663 | ![GC4663](image/GC4663.jpg) | 400W像素 | [GC4663](https://detail.tmall.com/item.htm?abbucket=12&id=683310105141&ns=1&spm=a230r.1.14.28.1dd135f0wI2LwA&skuId=4897731532963) |
 | 3    | IMX219 | ![IMX219](image/IMX219.jpg) | 800W像素 | [IMX219](https://detail.tmall.com/item.htm?abbucket=9&id=710344235988&rn=259e73f46059c2e6fc9de133ba9ddddf&spm=a1z10.5-b-s.w4011-22651484606.159.55df6a83NWrGPi) |
 
-注意：RDK X5ultra 只支持imx219 sensor，分辨率最大1920x1080.
+注意：RDK Ultra 只支持imx219 sensor，分辨率最大1920x1080.
 
 
 # 使用方法

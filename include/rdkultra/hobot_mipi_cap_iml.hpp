@@ -89,10 +89,10 @@ class HobotMipiCapIml : public HobotMipiCap {
   MIPI_CAP_INFO_ST cap_info_;
 };
 
-class HobotMipiCapImlRDKX5ultra : public HobotMipiCapIml {
+class HobotMipiCapImlRDKRdkultra : public HobotMipiCapIml {
  public:
-  HobotMipiCapImlRDKX5ultra() {}
-  ~HobotMipiCapImlRDKX5ultra() {}
+  HobotMipiCapImlRDKRdkultra() {}
+  ~HobotMipiCapImlRDKRdkultra() {}
 
   // 初始化设备环境，如J5的sensor GPIO配置和时钟配置
   // 返回值：0，成功；-1，配置失败

@@ -556,7 +556,7 @@ bool HobotMipiCapIml::detectSensor(SENSOR_ID_T &sensor_info) {
   return false;
 }
 
-int HobotMipiCapImlRDKX5ultra::initEnv() {
+int HobotMipiCapImlRDKRdkultra::initEnv() {
   std::vector<int> mipi_hosts = {0};
   std::vector<int> mipi_started;
   std::vector<int> mipi_stoped;
@@ -593,7 +593,7 @@ int HobotMipiCapImlRDKX5ultra::initEnv() {
   return 0;
 }
 
-std::vector<std::string> HobotMipiCapImlRDKX5ultra::listSensor() {
+std::vector<std::string> HobotMipiCapImlRDKRdkultra::listSensor() {
 
   // mipi sensor的信息数组
   SENSOR_ID_T sensor_id_list[] = {
