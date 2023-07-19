@@ -23,11 +23,9 @@ namespace mipi_cam {
 std::shared_ptr<HobotMipiCap> createMipiCap(const std::string &dev_name) {
   std::shared_ptr<HobotMipiCap> cap_ptr;
   if (dev_name == "RDKX3") {
-    cap_ptr = std::make_shared<HobotMipiCapImlRDKX3>();
+    cap_ptr = std::make_shared<HobotMipiCapIml>();
   } else if (dev_name == "x3sdb") {
     cap_ptr = std::make_shared<HobotMipiCapImlSDB>();
-  } else if (dev_name == "RDKX3_m") {
-    cap_ptr = std::make_shared<HobotMipiCapImlRDKX3_m>();
   } else {
     RCLCPP_ERROR(rclcpp::get_logger("mipi_factory"),
     "This is't support device type, only support x3sdb RDKX3 and RDKX3_m.\n");
@@ -36,11 +34,11 @@ std::shared_ptr<HobotMipiCap> createMipiCap(const std::string &dev_name) {
 }
 
 std::string getBoardType() {
-  int board_type = 0;
+  int board_type;
   bool auto_detect = false;
   std::ifstream som_name("/sys/class/socinfo/som_name");
   if (som_name.is_open()) {
-    som_name >> board_type;
+    som_name >> std::hex >> board_type;
     auto_detect = true;
   }
   std::string board_type_str;
@@ -53,18 +51,18 @@ std::string getBoardType() {
       case 5:
       case 6:
       case 8:
-      case 9:
-        board_type_str = "RDKX3";
-        break;      
+      case 9:    
       case 11:
       case 12:
       case 13:
       case 14:
       case 15:
       case 16:
-        board_type_str = "RDKX3_m";
+        board_type_str = "RDKX3";
         break;
       default:
+        RCLCPP_INFO(rclcpp::get_logger("mipi_factory"),
+          "/sys/class/socinfo/som_name:%d\n", board_type);
         break;
     }
   }

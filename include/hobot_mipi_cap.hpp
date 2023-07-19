@@ -47,9 +47,6 @@ class HobotMipiCap {
   // 返回值：0，停止成功；-1，停止失败。
   virtual int stop() = 0;
 
-  // 遍历设备连接的sensor
-  virtual std::vector<std::string> listSensor() = 0;
-
   // 如果有 vps ，就 输出vps 的分层数据
   virtual int getFrame(int nChnID, int* nVOutW, int* nVOutH,
       void* buf, unsigned int bufsize, unsigned int*, uint64_t&, bool gray = false) = 0;

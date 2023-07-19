@@ -54,6 +54,14 @@ typedef struct sensor_id {
   char sensor_name[10];  // sensor名字
 } SENSOR_ID_T;
 
+typedef struct {
+  bool reset_flag;
+  int reset_gpio;
+  int reset_level;
+  int i2c_bus;
+  int mipi_host;
+} BOARD_CONFIG_ST;
+
 #define I2C_ADDR_8    1
 #define I2C_ADDR_16   2
 
