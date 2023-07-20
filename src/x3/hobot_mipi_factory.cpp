@@ -27,6 +27,7 @@ std::shared_ptr<HobotMipiCap> createMipiCap(const std::string &dev_name) {
   } else if (dev_name == "x3sdb") {
     cap_ptr = std::make_shared<HobotMipiCapImlSDB>();
   } else {
+    cap_ptr = std::make_shared<HobotMipiCapIml>();
     RCLCPP_ERROR(rclcpp::get_logger("mipi_factory"),
     "This is't support device type(%s), start defaule capture.\n",dev_name.c_str());
   }
