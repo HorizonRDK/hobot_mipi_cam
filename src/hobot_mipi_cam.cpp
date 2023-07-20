@@ -423,7 +423,11 @@ bool MipiCamIml::getCamCalibration(sensor_msgs::msg::CameraInfo &cam_info,
     if ((file_path.length() == 0) || (file_path == "default")) {
       MIPI_CAP_INFO_ST cap_info;
       mipiCap_ptr_->getCapInfo(cap_info);
-      cal_file = cap_info.config_path + "/" + cap_info.sensor_type + "_calibration.yaml";
+      std::string sensor_name = cap_info.sensor_type;
+      std::transform(sensor_name.begin(), sensor_name.end(), sensor_name.begin(), [](unsigned char c){
+        return std::toupper(c);
+      });
+      cal_file = cap_info.config_path + "/" + sensor_name + "_calibration.yaml";
     } else {
       cal_file = file_path;
     }

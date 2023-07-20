@@ -553,20 +553,20 @@ void HobotMipiCapIml::listMipiHost(std::vector<int> &mipi_hosts,
 }
 
 
-bool HobotMipiCapIml::detectSensor(SENSOR_ID_T &sensor_info) {
+bool HobotMipiCapIml::detectSensor(SENSOR_ID_T &sensor_info, int i2c_bus) {
   char cmd[256];
   char result[1024];
   memset(cmd, '\0', sizeof(cmd));
   memset(result, '\0', sizeof(result));
   if (sensor_info.i2c_addr_width == I2C_ADDR_8) {
     sprintf(cmd, "i2ctransfer -y -f %d w1@0x%x 0x%x r1 2>&1",
-            sensor_info.i2c_bus,
+            i2c_bus,
             sensor_info.i2c_dev_addr,
             sensor_info.det_reg);
   } else if (sensor_info.i2c_addr_width == I2C_ADDR_16) {
     sprintf(cmd,
             "i2ctransfer -y -f %d w2@0x%x 0x%x 0x%x r1 2>&1",
-            sensor_info.i2c_bus,
+            i2c_bus,
             sensor_info.i2c_dev_addr,
             sensor_info.det_reg >> 8,
             sensor_info.det_reg & 0xFF);
@@ -625,13 +625,14 @@ std::vector<std::string> HobotMipiCapImlRDKRdkultra::listSensor() {
   // mipi sensor的信息数组
   SENSOR_ID_T sensor_id_list[] = {
     {5, 0x10, I2C_ADDR_16, 0x0000, "imx219"},
-    {6, 0x10, I2C_ADDR_16, 0x0000, "imx219"},
   };
   std::vector<std::string> device;
-
-  for (auto sensor_id : sensor_id_list) {
-    if (detectSensor(sensor_id)) {
-      device.push_back(sensor_id.sensor_name);
+  std::vector<int> i2c_buss= {5,6};
+  for (auto num : i2c_buss) {
+    for (auto sensor_id : sensor_id_list) {
+      if (detectSensor(sensor_id, num)) {
+        device.push_back(sensor_id.sensor_name);
+      }
     }
   }
   return device;
