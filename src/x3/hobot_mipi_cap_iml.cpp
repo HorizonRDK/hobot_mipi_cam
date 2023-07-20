@@ -351,13 +351,13 @@ int HobotMipiCapIml::getFrame(int nChnID, int* nVOutW, int* nVOutH,
 int HobotMipiCapIml::parseConfig(std::string sensor_name,
                                    int w, int h, int fps) {
   int ret = 0;
-  if ((sensor_name == "IMX415") || (sensor_name == "imx415")) {
+  if(strcasecmp(sensor_name.c_str(), "imx415") == 0) {
     imx415_linear_vin_param_init(&vin_info_);
-  } else if ((sensor_name == "F37") || (sensor_name == "f37")) {
+  } else if(strcasecmp(sensor_name.c_str(), "f37") == 0) {
     f37_linear_vin_param_init(&vin_info_);
-  } else if ((sensor_name == "GC4663") || (sensor_name == "gc4663")) {
+  } else if(strcasecmp(sensor_name.c_str(), "gc4663") == 0) {
     gc4663_linear_vin_param_init(&vin_info_);
-  } else if ((sensor_name == "IMX586") || (sensor_name == "imx586")) {
+  } else if(strcasecmp(sensor_name.c_str(), "imx586") == 0) {
     // enable, sdb3.0
     std::vector<std::string> sys_cmds{
         "echo 111 > /sys/class/gpio/export",
@@ -368,13 +368,13 @@ int HobotMipiCapIml::parseConfig(std::string sensor_name,
       system(sys_cmd.data());
     }
     imx586_linear_vin_param_init(&vin_info_);
-  } else if ((sensor_name == "GC4C33") || (sensor_name == "gc4c33")) {
+  } else if(strcasecmp(sensor_name.c_str(), "gc4c33") == 0) {
     gc4c33_linear_vin_param_init(&vin_info_);
-  } else if ((sensor_name == "IMX219") || (sensor_name == "imx219")) {
+  } else if(strcasecmp(sensor_name.c_str(), "imx219") == 0) {
     imx219_linear_vin_param_init(&vin_info_);
-  } else if ((sensor_name == "IMX477") || (sensor_name == "imx477")) {
+  } else if(strcasecmp(sensor_name.c_str(), "imx477") == 0) {
     imx477_linear_vin_param_init(&vin_info_);
-  } else if ((sensor_name == "OV5647") || (sensor_name == "ov5647")) {
+  } else if(strcasecmp(sensor_name.c_str(), "ov5647") == 0) {
     ov5647_linear_vin_param_init(&vin_info_);
   } else {
     RCLCPP_ERROR(rclcpp::get_logger("mipi_cam"),
@@ -557,6 +557,7 @@ int HobotMipiCapIml::selectSensor(std::string &sensor, int &host, int &i2c_bus) 
   for (auto sensor_id : sensor_id_list) {
     if(strcasecmp(sensor_id.sensor_name, sensor.c_str()) == 0) {
       sensor_ptr = &sensor_id;
+      break;
     }
   }
   bool sensor_flag = false;

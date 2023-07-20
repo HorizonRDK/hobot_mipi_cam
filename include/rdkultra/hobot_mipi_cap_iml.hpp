@@ -72,7 +72,7 @@ class HobotMipiCapIml : public HobotMipiCap {
   void listMipiHost(std::vector<int> &mipi_hosts, std::vector<int> &started,
                     std::vector<int> &stoped);
   // 探测已经连接的sensor
-  bool detectSensor(SENSOR_ID_T &sensor_info);
+  bool detectSensor(SENSOR_ID_T &sensor_info, int i2c_bus);
   
   bool started_ = false;
   std::string vio_cfg_file_;
