@@ -434,9 +434,9 @@ bool MipiCamIml::getCamCalibration(sensor_msgs::msg::CameraInfo &cam_info,
     std::string camera_name;
     std::ifstream fin(cal_file.c_str());
     if (!fin) {
-      RCLCPP_ERROR(rclcpp::get_logger("mipi_cam"),
-          "Camera calibration file: %s not exist! Please make sure the "
-          "calibration file path is correct and the calibration file exists!",
+      RCLCPP_WARN(rclcpp::get_logger("mipi_cam"),
+          "Camera calibration file: %s is not exist!"
+          "\nIf you need calibration msg, please make sure the calibration file path is correct and the calibration file exists!",
           cal_file.c_str());
       return false;
     }
