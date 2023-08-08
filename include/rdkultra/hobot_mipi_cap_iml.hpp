@@ -94,7 +94,7 @@ class HobotMipiCapImlRDKRdkultra : public HobotMipiCapIml {
   HobotMipiCapImlRDKRdkultra() {}
   ~HobotMipiCapImlRDKRdkultra() {}
 
-  // 初始化设备环境，如J5的sensor GPIO配置和时钟配置
+  // 初始化设备环境，如rdkultra的sensor GPIO配置和时钟配置
   // 返回值：0，成功；-1，配置失败
   int initEnv();
 

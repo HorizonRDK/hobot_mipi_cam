@@ -232,7 +232,7 @@ int HobotMipiCapIml::init(MIPI_CAP_INFO_ST &info) {
     cam_inited_ = true;
   }
   RCLCPP_INFO(rclcpp::get_logger("mipi_cam"),
-    "J5_cam_init success.\n");
+    "rdkultra_cam_init success.\n");
   return ret;
 }
 
@@ -263,7 +263,7 @@ int HobotMipiCapIml::start() {
   int port = 0;
   if (!cam_inited_) {
     RCLCPP_ERROR(rclcpp::get_logger("mipi_cam"),
-      "j5 camera isn't inited");
+      "rdkultra camera isn't inited");
     return -1;
   }
   ret = hb_vio_start_pipeline(pipeline_idx_);  // 使能数据通路
@@ -289,7 +289,7 @@ int HobotMipiCapIml::stop() {
   int port = 0;
   if (!started_) {
      RCLCPP_ERROR(rclcpp::get_logger("mipi_cam"),
-      "j5 camera isn't started");
+      "rdkultra camera isn't started");
     return -1;
   }
   ret = hb_cam_stop(pipeline_idx_);
@@ -326,7 +326,7 @@ int HobotMipiCapIml::getFrame(int nChnID, int* nVOutW, int* nVOutH,
   int stride = 0, width = 0, height = 0;
   if (!started_) {
      RCLCPP_ERROR_ONCE(rclcpp::get_logger("mipi_cam"),
-      "j5 camera isn't started");
+      "rdkultra camera isn't started");
     return -1;
   }
   do {

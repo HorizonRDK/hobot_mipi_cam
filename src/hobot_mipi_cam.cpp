@@ -315,16 +315,16 @@ bool MipiCamIml::getImage(builtin_interfaces::msg::Time &stamp,
     clock_gettime(CLOCK_MONOTONIC, &ts);
     msEnd = (ts.tv_sec * 1000 + ts.tv_nsec / 1000000);
   }
-  RCLCPP_INFO(rclcpp::get_logger("mipi_cam"),
-             "[%s]->enc=%s,step=%d, w:h=%d:%d,sz=%d,start %ld->laps=%ld ms.\n",
-              __func__,
-              encoding.c_str(),
-              step,
-              width,
-              height,
-              data_size,
-              msStart,
-              msEnd - msStart);
+
+  RCLCPP_INFO_STREAM(rclcpp::get_logger("mipi_cam"),
+             "hbmem enc=" << encoding.data()
+             << ", width=" << width
+             << ", height=" << height
+             << ", step=" << step
+             << ", sz=" << data_size
+             << ", ts=" << stamp.sec << "." << stamp.nanosec
+              << ", laps ms=" << msEnd - msStart);
+
   return true;
 }
 
@@ -404,14 +404,14 @@ bool MipiCamIml::getImageMem(
     clock_gettime(CLOCK_MONOTONIC, &ts);
     msEnd = (ts.tv_sec * 1000 + ts.tv_nsec / 1000000);
   }
-  RCLCPP_INFO(rclcpp::get_logger("mipi_cam"),
-             "[%s]->hbmem enc=%s,step=%d,sz=%d,start %ld->laps=%ld ms.\n",
-              __func__,
-              encoding.data(),
-              step,
-              data_size,
-              msStart,
-              msEnd - msStart);
+  RCLCPP_INFO_STREAM(rclcpp::get_logger("mipi_cam"),
+             "enc=" << encoding.data()
+             << ", width=" << width
+             << ", height=" << height
+             << ", step=" << step
+             << ", sz=" << data_size
+             << ", ts=" << stamp.sec << "." << stamp.nanosec
+              << ", laps ms=" << msEnd - msStart);
   return true;
 }
 

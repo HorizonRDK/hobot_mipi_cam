@@ -102,6 +102,9 @@ void MipiCamNode::getParams() {
                   parameter.value_to_string().c_str());
     } else if (parameter.get_name() == "io_method") {
       io_method_name_ = parameter.value_to_string();
+      RCLCPP_INFO(rclcpp::get_logger("mipi_node"),
+                  "io_method_name_: %s",
+                  io_method_name_.c_str());
     } else if (parameter.get_name() == "video_device") {
       nodePare_.video_device_name_ = parameter.value_to_string();
       RCLCPP_INFO(rclcpp::get_logger("mipi_node"),
