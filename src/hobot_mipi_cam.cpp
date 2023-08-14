@@ -167,6 +167,7 @@ int MipiCamIml::init(struct NodePara &para) {
   cap_info_.width = nodePare_.image_width_;
   cap_info_.height = nodePare_.image_height_;
   cap_info_.fps = nodePare_.framerate_;
+  cap_info_.channel_ = nodePare_.channel_;
 
   if (mipiCap_ptr_->initEnv() < 0) {
     RCLCPP_ERROR(rclcpp::get_logger("mipi_cam"),

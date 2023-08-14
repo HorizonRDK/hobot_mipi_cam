@@ -280,11 +280,11 @@ int x3_vin_init(x3_vin_info_t *vin_info)
     ret = HB_SYS_SetVINVPSMode(pipeId, vin_info->vin_vps_mode);
     if (ret < 0) {
         RCLCPP_ERROR(rclcpp::get_logger("mipi_cam"),
-		  "HB_SYS_SetVINVPSMode%d error!\n", vin_info->vin_vps_mode);
+		  "HB_SYS_SetVINVPSMode %d error!\n", vin_info->vin_vps_mode);
         return ret;
     }
     RCLCPP_INFO(rclcpp::get_logger("mipi_cam"),
-	  "===>HB_SYS_SetVINVPSMode%d error =%d!\n", vin_info->vin_vps_mode,ret);
+	  "===>HB_SYS_SetVINVPSMode %d\n", vin_info->vin_vps_mode);
     ret = HB_VIN_CreatePipe(pipeId, &vin_info->pipeinfo);  // isp init
     if (ret < 0) {
         RCLCPP_ERROR(rclcpp::get_logger("mipi_cam"), "HB_VIN_CreatePipe error!\n");

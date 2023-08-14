@@ -22,10 +22,10 @@
 namespace mipi_cam {
 std::shared_ptr<HobotMipiCap> createMipiCap(const std::string &dev_name) {
   std::shared_ptr<HobotMipiCap> cap_ptr;
-  if (dev_name == "RDKX3") {
+  if (dev_name == "RDKX3 module") {
     cap_ptr = std::make_shared<HobotMipiCapIml>();
-  } else if (dev_name == "x3sdb") {
-    cap_ptr = std::make_shared<HobotMipiCapImlSDB>();
+  } else if (dev_name == "RDKX3") {
+    cap_ptr = std::make_shared<HobotMipiCapIml>();
   } else {
     cap_ptr = std::make_shared<HobotMipiCapIml>();
     RCLCPP_ERROR(rclcpp::get_logger("mipi_factory"),
@@ -45,21 +45,19 @@ std::string getBoardType() {
   std::string board_type_str;
   if (auto_detect) {
     switch (board_type) {
-      case 3:
-      case 4:
-        board_type_str = "x3sdb";
-        break;
       case 5:
       case 6:
       case 8:
       case 9:    
+        board_type_str = "RDKX3";
+        break;
       case 11:
       case 12:
       case 13:
       case 14:
       case 15:
       case 16:
-        board_type_str = "RDKX3";
+        board_type_str = "RDKX3 module";
         break;
       default:
         RCLCPP_INFO(rclcpp::get_logger("mipi_factory"),
