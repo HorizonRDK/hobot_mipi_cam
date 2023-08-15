@@ -44,6 +44,7 @@ typedef struct {
   int width;
   int height;
   int fps;
+  int channel_;
 } MIPI_CAP_INFO_ST;
 
 typedef struct sensor_id {

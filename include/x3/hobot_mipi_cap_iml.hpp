@@ -85,23 +85,12 @@ class HobotMipiCapIml : public HobotMipiCap {
   MIPI_CAP_INFO_ST cap_info_;
   int entry_index_ = 0;
   int sensor_bus_ = 2;
+  int pipeline_id_ = 0;
   std::vector<int> mipi_started_;
   std::vector<int> mipi_stoped_;
   std::map<int, BOARD_CONFIG_ST> board_config_m_;
   std::map<int, std::vector<std::string>> host_sensor_m_;
 };
-
-class HobotMipiCapImlSDB : public HobotMipiCapIml {
- public:
-  HobotMipiCapImlSDB() {}
-  ~HobotMipiCapImlSDB() {}
-
-  // 初始化设备环境，如X3的sensor GPIO配置和时钟配置
-  // 返回值：0，成功；-1，配置失败
-  int initEnv();
-
-};
-
 
 }  // namespace mipi_cam
 

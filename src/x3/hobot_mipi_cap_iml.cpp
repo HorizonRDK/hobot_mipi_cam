@@ -52,22 +52,43 @@ int HobotMipiCapIml::initEnv() {
     mipi_hosts = {0,1,2,3};
   }
   listMipiHost(mipi_hosts, mipi_started_, mipi_stoped_);
-  if ((mipi_stoped_.size() == 0) || (mipi_started_.size() > 0))  {
+  if (mipi_started_.size() > 0) { //暂时不能同时启动多个mipi_cam进程
+    RCLCPP_ERROR(rclcpp::get_logger("mipi_cam"), "The device has already been started\n");
     return -1;
   }
-  std::vector<std::string> sys_cmds;
-  std::string cmd_name;
-  for (int num : mipi_stoped_) {
-    cmd_name = "echo 1 > /sys/class/vps/mipi_host" + std::to_string(num) + "/param/snrclk_en";
-    sys_cmds.push_back(cmd_name);
-    cmd_name = "echo 24000000 > /sys/class/vps/mipi_host" + std::to_string(num) + "/param/snrclk_freq";
-    sys_cmds.push_back(cmd_name);
-    cmd_name = "echo 1 > /sys/class/vps/mipi_host" + std::to_string(num) + "/param/stop_check_instart";
-    sys_cmds.push_back(cmd_name);
+  if (mipi_stoped_.size() == 0) {
+    RCLCPP_ERROR(rclcpp::get_logger("mipi_cam"), "There are no available host.\n");
+    return -1;
   }
-  for (const auto& sys_cmd : sys_cmds) {
-    system(sys_cmd.data());
+  if (board_config_m_.size() == 0) {
+    if (mipi_started_.size() > 0) {
+      return -1;
+    }
   }
+
+  if (mipi_started_.size() == 0) {
+    // 系统镜像启动后进行初始化，暂时不做初始化，新硬件有差异在重载initEnv特殊初始化。
+    std::vector<std::string> sys_cmds;
+    std::string cmd_name;
+    for (int num : mipi_stoped_) {
+      cmd_name = "echo 1 > /sys/class/vps/mipi_host" + std::to_string(num) + "/param/snrclk_en > /dev/null";
+      sys_cmds.push_back(cmd_name);
+      cmd_name = "echo 24000000 > /sys/class/vps/mipi_host" + std::to_string(num) + "/param/snrclk_freq > /dev/null";
+      sys_cmds.push_back(cmd_name);
+      cmd_name = "echo 1 > /sys/class/vps/mipi_host" + std::to_string(num) + "/param/stop_check_instart";
+      sys_cmds.push_back(cmd_name);
+    }
+    for (const auto& sys_cmd : sys_cmds) {
+      RCLCPP_INFO(rclcpp::get_logger("mipi_cam"), "sys_cmd:%s\n",sys_cmd.c_str());
+      system(sys_cmd.data());
+    }
+  }
+
+  /* sdb 生态开发板  ，使能sensor       mclk, 否则i2c 通信不会成功的 */
+  HB_MIPI_EnableSensorClock(0);
+  HB_MIPI_EnableSensorClock(1);
+  // HB_MIPI_EnableSensorClock(2); // 需要修改内核dts使能mipihost2的mclk
+
   return 0;
 }
 
@@ -75,13 +96,13 @@ int HobotMipiCapIml::init(MIPI_CAP_INFO_ST &info) {
   int ret = 0;
   cap_info_ = info;
 
+  entry_index_ = cap_info_.channel_;
+
   if (selectSensor(cap_info_.sensor_type, entry_index_, sensor_bus_) < 0) {
     RCLCPP_ERROR(rclcpp::get_logger("mipi_cam"),
       "not select  sensor!\n");
     return -1;
   }
-
-  parseConfig(cap_info_.sensor_type, cap_info_.width, cap_info_.height, cap_info_.fps);
   int pipeline_id = 0;
   for (; pipeline_id < 8; pipeline_id++) {
     if (!checkPipelineOpened(pipeline_id)) {
@@ -91,7 +112,9 @@ int HobotMipiCapIml::init(MIPI_CAP_INFO_ST &info) {
   if (pipeline_id >= 8) {
     goto vp_err;
   }
-  vin_info_.pipe_id = pipeline_id;
+  pipeline_id_ = pipeline_id;
+
+  parseConfig(cap_info_.sensor_type, cap_info_.width, cap_info_.height, cap_info_.fps);
 
   ret = x3_vp_init();
   if (ret) {
@@ -147,6 +170,7 @@ int HobotMipiCapIml::init(MIPI_CAP_INFO_ST &info) {
       goto vps_bind_err;
     }
   }
+  
   HB_ISP_GetSetInit();
   RCLCPP_INFO(rclcpp::get_logger("mipi_cam"),
     "x3 camera init success.\n");
@@ -383,10 +407,14 @@ int HobotMipiCapIml::parseConfig(std::string sensor_name,
     return -1;
   }
 
+  vin_info_.pipe_id = pipeline_id_;
+  vin_info_.dev_id = pipeline_id_;
   vin_info_.snsinfo.sensorInfo.bus_num = sensor_bus_;
   vin_info_.snsinfo.sensorInfo.entry_index = entry_index_;
+  vin_info_.snsinfo.sensorInfo.dev_port = pipeline_id_;
     // 减少ddr带宽使用量
-  vin_info_.vin_vps_mode = VIN_ONLINE_VPS_OFFLINE;
+  //vin_info_.vin_vps_mode = VIN_ONLINE_VPS_OFFLINE;
+  vin_info_.vin_vps_mode = VIN_OFFLINE_VPS_ONLINE;
   // 2. 根据vin中的分辨率配置vps
   int width = vin_info_.mipi_attr.mipi_host_cfg.width;
   int height = vin_info_.mipi_attr.mipi_host_cfg.height;
@@ -404,6 +432,7 @@ int HobotMipiCapIml::parseConfig(std::string sensor_name,
       2, w, h, fps);
   RCLCPP_INFO(rclcpp::get_logger("mipi_cam"),
       "[%s]-> w:h=%d:%d ,fps=%d sucess.\n", __func__, w, h, fps);
+  vps_infos_.m_vps_info[0].m_vps_grp_id = pipeline_id_;
 }
 
 bool HobotMipiCapIml::checkPipelineOpened(int pipeline_idx) {
@@ -548,11 +577,6 @@ int HobotMipiCapIml::selectSensor(std::string &sensor, int &host, int &i2c_bus) 
   };
   std::vector<int> i2c_buss= {0,1,2,3,4,5,6};
 
-  /* sdb 生态开发板  ，使能sensor       mclk, 否则i2c 通信不会成功的 */
-  HB_MIPI_EnableSensorClock(0);
-  HB_MIPI_EnableSensorClock(1);
-  // HB_MIPI_EnableSensorClock(2); // 需要修改内核dts使能mipihost2的mclk
-
   SENSOR_ID_T *sensor_ptr = nullptr;
   for (auto sensor_id : sensor_id_list) {
     if(strcasecmp(sensor_id.sensor_name, sensor.c_str()) == 0) {
@@ -576,13 +600,24 @@ int HobotMipiCapIml::selectSensor(std::string &sensor, int &host, int &i2c_bus) 
         }
       }
     } else {
-      if (mipi_started_.size() > 0) {
-        return -1;
-      } else {
-        for (auto num : i2c_buss) {
-          if (detectSensor(*sensor_ptr, num)) {
-            host = mipi_stoped_[0];
-            i2c_bus = num;
+      for (auto num : i2c_buss) {
+        if (detectSensor(*sensor_ptr, num)) {
+          // host = mipi_stoped_[0];
+          i2c_bus = num;
+          sensor_flag = true;
+          return 0;
+        }
+      }
+    }
+  }
+  if (board_config_m_.size() > 0) {
+    for (auto board : board_config_m_) {
+      if (board.second.mipi_host == host) {
+        for (auto sensor_id : sensor_id_list) {
+          if (detectSensor(sensor_id, board.second.i2c_bus)) {
+            host = board.second.mipi_host;
+            i2c_bus = board.second.i2c_bus;
+            sensor = sensor_id.sensor_name;
             sensor_flag = true;
             return 0;
           }
@@ -607,13 +642,10 @@ int HobotMipiCapIml::selectSensor(std::string &sensor, int &host, int &i2c_bus) 
       }
     }
   }
-  if ((mipi_started_.size() > 0) || (mipi_stoped_.size() == 0)) {
-    return -1;
-  }
   for (auto num : i2c_buss) {
     for (auto sensor_id : sensor_id_list) {
       if (detectSensor(sensor_id, num)) {
-        host = mipi_stoped_[0];
+        // host = mipi_stoped_[0];
         i2c_bus = num;
         sensor = sensor_id.sensor_name;
         sensor_flag = true;
@@ -622,48 +654,6 @@ int HobotMipiCapIml::selectSensor(std::string &sensor, int &host, int &i2c_bus) 
     }
   }
   return -1;
-}
-
-int HobotMipiCapImlSDB::initEnv() {
-  std::vector<int> mipi_hosts = {0,1};
-  std::vector<int> mipi_started;
-  std::vector<int> mipi_stoped;
-  listMipiHost(mipi_hosts, mipi_started, mipi_stoped);
-  if (mipi_stoped.size() == 0) {
-    return -1;
-  }
-  std::vector<std::string> sys_cmds;
-  for (int num : mipi_stoped) {
-    switch (num) {
-      case 0:
-        sys_cmds.push_back("echo 119 > /sys/class/gpio/export");
-        sys_cmds.push_back("echo out > /sys/class/gpio/gpio119/direction");
-        sys_cmds.push_back("echo 0 > /sys/class/gpio/gpio119/value");
-        sys_cmds.push_back("sleep 0.2");
-        sys_cmds.push_back("echo 1 > /sys/class/gpio/gpio119/value");
-        sys_cmds.push_back("echo 119 > /sys/class/gpio/unexport");
-        sys_cmds.push_back("echo 24000000 > /sys/class/vps/mipi_host0/param/snrclk_freq");
-        sys_cmds.push_back("echo 1 > /sys/class/vps/mipi_host0/param/stop_check_instart");
-        break;
-      case 1:
-        sys_cmds.push_back("echo 111 > /sys/class/gpio/export");
-        sys_cmds.push_back("echo out > /sys/class/gpio/gpio111/direction");
-        sys_cmds.push_back("echo 0 > /sys/class/gpio/gpio111/value");
-        sys_cmds.push_back("sleep 0.2");
-        sys_cmds.push_back("echo 1 > /sys/class/gpio/gpio111/value");
-        sys_cmds.push_back("echo 111 > /sys/class/gpio/unexport");
-        sys_cmds.push_back("echo 24000000 > /sys/class/vps/mipi_host1/param/snrclk_freq");
-        sys_cmds.push_back("echo 1 > /sys/class/vps/mipi_host1/param/stop_check_instart");
-        break;
-      default:
-        break;
-    }
-  }
-  for (const auto& sys_cmd : sys_cmds) {
-    system(sys_cmd.data());
-  }
-  entry_index_ = 0;
-  return 0;
 }
 
 }  // namespace mipi_cam

@@ -87,14 +87,14 @@ include_directories(include
   ${PROJECT_SOURCE_DIR}
   ${CMAKE_SYSROOT}/usr/
   ${CMAKE_SYSROOT}/usr/include
-  ../../hobot_perception/mot/deps/jsoncpp/include/
+  deps/jsoncpp/include/
 )
 
 link_directories(
   ${CMAKE_SYSROOT}/usr/lib
   ${CMAKE_SYSROOT}/usr/lib/hbmedia
   ${CMAKE_SYSROOT}/usr/lib/system/lib
-  ../../hobot_perception/mot/deps/jsoncpp/lib
+  deps/jsoncpp/lib
 )
 
 add_executable(${PROJECT_NAME}
