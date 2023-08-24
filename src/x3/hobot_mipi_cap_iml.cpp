@@ -413,13 +413,11 @@ int HobotMipiCapIml::parseConfig(std::string sensor_name,
   vin_info_.snsinfo.sensorInfo.entry_index = entry_index_;
   vin_info_.snsinfo.sensorInfo.dev_port = pipeline_id_;
     // 减少ddr带宽使用量
-  //vin_info_.vin_vps_mode = VIN_ONLINE_VPS_OFFLINE;
-  vin_info_.vin_vps_mode = VIN_OFFLINE_VPS_ONLINE;
+  vin_info_.vin_vps_mode = VIN_ONLINE_VPS_OFFLINE;
   // 2. 根据vin中的分辨率配置vps
   int width = vin_info_.mipi_attr.mipi_host_cfg.width;
   int height = vin_info_.mipi_attr.mipi_host_cfg.height;
   int mipi_fps = vin_info_.mipi_attr.mipi_host_cfg.fps;
-  // vin_info_.vin_vps_mode = VIN_ONLINE_VPS_ONLINE;
   vps_enable_ = 1;
   vps_infos_.m_group_num = 1;
   // 配置group的输入
