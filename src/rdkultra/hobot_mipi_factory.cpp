@@ -24,9 +24,9 @@ namespace mipi_cam {
 std::shared_ptr<HobotMipiCap> createMipiCap(const std::string &dev_name) {
   std::shared_ptr<HobotMipiCap> cap_ptr;
   if (dev_name == "RDKRdkultra") {
-    cap_ptr = std::make_shared<HobotMipiCapImlRDKRdkultra>();
+    cap_ptr = std::make_shared<HobotMipiCapIml>();
   } else {
-    cap_ptr = std::make_shared<HobotMipiCapImlRDKRdkultra>();
+    cap_ptr = std::make_shared<HobotMipiCapIml>();
     RCLCPP_ERROR(rclcpp::get_logger("mipi_factory"),
        "This is't support device type(%s), start defaule capture.\n",dev_name.c_str());
   }
@@ -40,6 +40,7 @@ std::string getBoardType() {
   if (som_name.is_open()) {
     som_name >> board_type;
     auto_detect = true;
+    som_name.close();
   }
   std::string board_type_str = "";
   if (auto_detect) {

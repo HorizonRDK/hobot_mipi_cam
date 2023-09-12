@@ -1,0 +1,65 @@
+{
+        "config_number": 1,
+        "board_name": "x3ultra_dev",
+        "config_0": {
+            "interface_type": "mipi",
+            "port_number":4,
+            "port_mask":1,
+            "port_0":{
+                "bus_type":0,
+                "bus_num":0,
+                "sensor_addr":"0x10",
+                "sensor_name":"imx219",
+                "reg_width":16,
+                "sensor_mode":1,
+                "entry_num":0,
+                "fps":30,
+                "resolution":1080,
+                "dev_port":0,
+                "data_path": "/opt/tros/lib/mipi_cam/config/imx219/cim.json",
+                "config_path":"/opt/tros/lib/mipi_cam/config/imx219/mipi.json"
+            },
+            "port_1":{
+                "bus_type":0,
+                "bus_num":1,
+                "sensor_addr":"0x10",
+                "sensor_name":"imx219",
+                "reg_width":16,
+                "sensor_mode":1,
+                "entry_num":1,
+                "fps":30,
+                "resolution":1080,
+                "dev_port":1,
+                "data_path": "/opt/tros/lib/mipi_cam/config/imx219/cim.json",
+                "config_path":"/opt/tros/lib/mipi_cam/config/imx219/mipi.json"
+            },
+            "port_2":{
+                "bus_type":0,
+                "bus_num":2,
+                "sensor_addr":"0x10",
+                "sensor_name":"imx219",
+                "reg_width":16,
+                "sensor_mode":1,
+                "entry_num":2,
+                "fps":30,
+                "resolution":1080,
+                "dev_port":2,
+                "data_path": "/opt/tros/lib/mipi_cam/config/imx219/cim.json",
+                "config_path":"/opt/tros/lib/mipi_cam/config/imx219/mipi.json"
+            },
+            "port_3":{
+                "bus_type":0,
+                "bus_num":3,
+                "sensor_addr":"0x10",
+                "sensor_name":"imx219",
+                "reg_width":16,
+                "sensor_mode":1,
+                "entry_num":3,
+                "fps":30,
+                "resolution":1080,
+                "dev_port":3,
+                "data_path": "/opt/tros/lib/mipi_cam/config/imx219/cim.json",
+                "config_path":"/opt/tros/lib/mipi_cam/config/imx219/mipi.json"
+            }
+        }
+    }

@@ -16,6 +16,7 @@
 #define HOBOT_MIPI_CAP_IML_HPP_
 #include <vector>
 #include <string>
+#include <map>
 #include "hobot_mipi_cap.hpp"
 #include "hobot_mipi_comm.hpp"
 
@@ -47,9 +48,6 @@ class HobotMipiCapIml : public HobotMipiCap {
   // 返回值：0，停止成功；-1，停止失败。
   int stop();
 
-  // 遍历设备连接的sensor
-  virtual std::vector<std::string> listSensor();
-
   // 如果有 vps ，就 输出vps 的分层数据
   int getFrame(int nChnID, int* nVOutW, int* nVOutH,
         void* buf, unsigned int bufsize, unsigned int*, uint64_t&, bool gray = false);
@@ -71,22 +69,36 @@ class HobotMipiCapIml : public HobotMipiCap {
   //遍历初始话的mipi host.
   void listMipiHost(std::vector<int> &mipi_hosts, std::vector<int> &started,
                     std::vector<int> &stoped);
+  bool analysis_board_config();
+
   // 探测已经连接的sensor
   bool detectSensor(SENSOR_ID_T &sensor_info, int i2c_bus);
+
+  int selectSensor(std::string &sensor, int &host, int &i2c_bus);
   
   bool started_ = false;
   std::string vio_cfg_file_;
   std::string cam_cfg_file_;
+  std::string cim_cfg_file_;
+  std::string mipi_cfg_file_;
   int cam_cfg_index_;
   bool vio_inited_ = false;
   bool cam_inited_ = false;
   bool use_ds_roi_ = false;
-  int pipeline_idx_;
+  int pipeline_idx_ = 0;
   int data_layer_ = 0xff;
   int ds_pym_layer_ = 0;
   u_int32_t src_width_;
   u_int32_t src_height_;
   MIPI_CAP_INFO_ST cap_info_;
+
+
+  int entry_index_ = 0;
+  int sensor_bus_ = 2;
+  std::vector<int> mipi_started_;
+  std::vector<int> mipi_stoped_;
+  std::map<int, BOARD_CONFIG_ST> board_config_m_;
+  std::map<int, std::vector<std::string>> host_sensor_m_;
 };
 
 class HobotMipiCapImlRDKRdkultra : public HobotMipiCapIml {
@@ -97,9 +109,6 @@ class HobotMipiCapImlRDKRdkultra : public HobotMipiCapIml {
   // 初始化设备环境，如rdkultra的sensor GPIO配置和时钟配置
   // 返回值：0，成功；-1，配置失败
   int initEnv();
-
-  // 遍历设备连接的sensor
-  std::vector<std::string> listSensor();
 
 };
 
