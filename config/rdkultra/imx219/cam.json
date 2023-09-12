@@ -1,6 +1,6 @@
 {
         "config_number": 1,
-        "board_name": "x3ultra_dev",
+        "board_name": "rdkurltra",
         "config_0": {
             "interface_type": "mipi",
             "port_number":4,
