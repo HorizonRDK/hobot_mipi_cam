@@ -347,7 +347,6 @@ int HobotMipiCapIml::init(MIPI_CAP_INFO_ST &info) {
     return -1;
   }
 
-#if 0
   ret = hb_vio_cfg_check(vio_cfg_file_.c_str(), cam_cfg_file_.c_str(),
          cam_cfg_index_);
   if (ret < 0) {
@@ -356,7 +355,6 @@ int HobotMipiCapIml::init(MIPI_CAP_INFO_ST &info) {
       cam_cfg_file_.c_str(), vio_cfg_file_.c_str(), cam_cfg_index_, ret);
     return -1;
    }
-#endif
 
   ret = hb_vio_init(vio_cfg_file_.c_str());
   if (ret != 0) {
