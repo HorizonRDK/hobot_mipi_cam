@@ -23,6 +23,7 @@
 #include <fstream>
 #include <iostream>
 #include <unistd.h>
+#include <regex>
 
 #include <rclcpp/rclcpp.hpp>
 #include <json/json.h>
@@ -32,9 +33,11 @@ namespace mipi_cam {
 int HobotMipiCapIml::UpdateConfig(MIPI_CAP_INFO_ST &info) {
   RCLCPP_DEBUG(rclcpp::get_logger("mipi_cam"),
       "config_path : %s.\n", info.config_path.c_str());
-if ((info.sensor_type == "IMX219") || (info.sensor_type == "imx219")) {
-    vio_cfg_file_ = info.config_path + "/imx219/vpm_config.json";
-    cam_cfg_file_ = info.config_path + "/imx219/hb_x3ultra_dev.json";
+  if ((info.sensor_type == "IMX219") || (info.sensor_type == "imx219")) {
+    vio_cfg_file_ = info.config_path + "/imx219/vpm.json";
+    cam_cfg_file_ = info.config_path + "/imx219/cam.json";
+    mipi_cfg_file_ = info.config_path + "/imx219/mipi.json";
+    cim_cfg_file_ = info.config_path + "/imx219/cim.json";
     cam_cfg_index_ = 0;
   } else {
     RCLCPP_ERROR(rclcpp::get_logger("mipi_cam"),
@@ -45,175 +48,314 @@ if ((info.sensor_type == "IMX219") || (info.sensor_type == "imx219")) {
       "vio_cfg_file_ : %s.\n", vio_cfg_file_.c_str());
   RCLCPP_INFO(rclcpp::get_logger("mipi_cam"),
       "cam_cfg_file_ : %s.\n", cam_cfg_file_.c_str());
-  std::ifstream cam_file(vio_cfg_file_);
-  if (!cam_file.is_open()) {
-    RCLCPP_ERROR(rclcpp::get_logger("mipi_cam"),
-      "[%s]->open file error (%s).\n", __func__, vio_cfg_file_.c_str());
-    return -1;
-  }
-  Json::Value root;
-  cam_file >> root;
-  int w, h;
-  int pym_layer = -1;
-  try {
-    src_width_ = root["pipeline0"]["isp"]["width"].asInt();
-    src_height_ = root["pipeline0"]["isp"]["height"].asInt();
-    u_int32_t ds_roi_en = root["pipeline0"]["pym"]["pym_ctrl"]["ds_roi_en"].asInt();
-    bool ds_en = false;
+  RCLCPP_INFO(rclcpp::get_logger("mipi_cam"),
+      "pipeline_idx_ : %d.\n", pipeline_idx_);
 
-#if 0
-    if ((info.width > src_width_) || (info.height > src_height_)) {
+  std::string pipeline_str = "pipeline" + std::to_string(pipeline_idx_);
+  std::string port_str = "port_" + std::to_string(pipeline_idx_);
+  std::string config_str = "config_" + std::to_string(cam_cfg_index_);
+  {
+    std::ifstream cam_file(cam_cfg_file_);
+    if (!cam_file.is_open()) {
       RCLCPP_ERROR(rclcpp::get_logger("mipi_cam"),
-      "[%s]-> w*h:%d*%d > src_w*src_h:%d*%d\n",
-      __func__, info.width, info.height, src_width_, src_height_);
+        "[%s]->open file error (%s).\n", __func__, cam_cfg_file_.c_str());
       return -1;
-    } else if ((info.width == src_width_) && (info.height == src_height_)) {
-    } else if (info.width >= src_width_ / 2) {
-      ds_pym_layer_ = 0;
-      use_ds_roi_ = true;
-    } else if (info.width >= src_width_ / 4) {
-      ds_pym_layer_ = 1;
-      use_ds_roi_ = true;
-    } else if (info.width >= src_width_ / 8) {
-      ds_pym_layer_ = 2;
-      use_ds_roi_ = true;
-    } else if (info.width >= src_width_ / 16) {
-      ds_pym_layer_ = 3;
-      use_ds_roi_ = true;
-    } else if (info.width >= src_width_ / 32) {
-      ds_pym_layer_ = 4;
-      use_ds_roi_ = true;
     }
-    if (use_ds_roi_) {
-      root["pipeline0"]["pym"]["pym_ctrl"]["ds_roi"][ds_pym_layer_]["ds_roi_layer"] = 0;
-      root["pipeline0"]["pym"]["pym_ctrl"]["ds_roi"][ds_pym_layer_]["ds_roi_sel"] = 0;
-      root["pipeline0"]["pym"]["pym_ctrl"]["ds_roi"][ds_pym_layer_]["ds_roi_start_top"] = 0;
-      root["pipeline0"]["pym"]["pym_ctrl"]["ds_roi"][ds_pym_layer_]["ds_roi_start_left"] = 0;
-      root["pipeline0"]["pym"]["pym_ctrl"]["ds_roi"][ds_pym_layer_]["ds_roi_region_width"] = info.width;
-      root["pipeline0"]["pym"]["pym_ctrl"]["ds_roi"][ds_pym_layer_]["ds_roi_region_height"] = info.height;
-      root["pipeline0"]["pym"]["pym_ctrl"]["ds_roi"][ds_pym_layer_]["ds_roi_stride_y"] = info.width;
-      root["pipeline0"]["pym"]["pym_ctrl"]["ds_roi"][ds_pym_layer_]["ds_roi_stride_uv"] = info.width;
-      root["pipeline0"]["pym"]["pym_ctrl"]["ds_roi"][ds_pym_layer_]["ds_roi_out_width"] = info.width;
-      root["pipeline0"]["pym"]["pym_ctrl"]["ds_roi"][ds_pym_layer_]["ds_roi_out_height"] = info.height;
-      root["pipeline0"]["pym"]["pym_ctrl"]["ds_roi_en"] = (ds_roi_en | (1 << ds_pym_layer_));
+    Json::Value root;
+    cam_file >> root;
+    try {
+      root[config_str]["port_mask"] = (1 << pipeline_idx_);
+      root[config_str][port_str]["entry_num"] = entry_index_;
+      root[config_str][port_str]["bus_num"] = sensor_bus_;
+      // root[config_str][port_str]["dev_port"] = pipeline_idx_;
+      // cim_cfg_file_ = root[config_str][port_str]["data_path"].asString();
+      root[config_str][port_str]["data_path"] = cim_cfg_file_;
+      root[config_str][port_str]["config_path"] = mipi_cfg_file_;
+      cam_file.close();
+      std::ofstream ofs(cam_cfg_file_);
+      Json::StyledStreamWriter writer;
+      writer.write(ofs, root);
+      ofs.close();
+    }catch (std::runtime_error& e) {
+      RCLCPP_ERROR(rclcpp::get_logger("mipi_cam"),
+        "[%s]->update  (%s) config error.\n", __func__, cam_cfg_file_.c_str());
+      cam_file.close();
+      return -1;
+    }
+  }
+  {
+    std::ifstream cim_file(cim_cfg_file_);
+    if (!cim_file.is_open()) {
+      RCLCPP_ERROR(rclcpp::get_logger("mipi_cam"),
+        "[%s]->open file error (%s).\n", __func__, cim_cfg_file_.c_str());
+      return -1;
+    }
+    Json::Value root;
+    cim_file >> root;
+    try {
+      if (!root.isMember(pipeline_str)) {
+        std::string tmp_pipeline;
+        for (int i = 0; i < 16; i++) {
+          tmp_pipeline  = "pipeline" + std::to_string(i);
+          if (root.isMember(tmp_pipeline)) {
+            Json::Value oldValue = root[tmp_pipeline];
+            root[pipeline_str] = oldValue;
+            root.removeMember(tmp_pipeline);
+            break;
+          }
+        }
+      }
+      if (entry_index_ < 2) {
+        root[pipeline_str]["cim"]["input"]["mipi"]["enable"] = 1;
+        root[pipeline_str]["cim_dma"]["input"]["mipi"]["enable"] = 0;
+        root[pipeline_str]["cim"]["input"]["mipi"]["rx_index"] = entry_index_;
+        root[pipeline_str]["cim"]["output"]["isp0"]["isp_ch0"] = 0;
+        root[pipeline_str]["cim"]["output"]["isp0"]["isp_ch0"] = 0;
+        root[pipeline_str]["cim"]["output"]["isp0"]["isp_ch0"] = 0;
+        root[pipeline_str]["cim"]["output"]["isp0"]["isp_ch0"] = 0;
+        int tmp_index = entry_index_ * 2;
+        if (tmp_index == 0) {
+          root[pipeline_str]["cim"]["output"]["isp0"]["isp_ch0"] = 1;
+        } else if (tmp_index == 1) {
+          root[pipeline_str]["cim"]["output"]["isp0"]["isp_ch1"] = 1;
+        } else if (tmp_index == 2) {
+          root[pipeline_str]["cim"]["output"]["isp0"]["isp_ch2"] = 1;
+        } else if (tmp_index == 3) {
+          root[pipeline_str]["cim"]["output"]["isp0"]["isp_ch3"] = 1;
+        }
+      } else {
+        root[pipeline_str]["cim"]["input"]["mipi"]["enable"] = 0;
+        root[pipeline_str]["cim_dma"]["input"]["mipi"]["enable"] = 1;
+        root[pipeline_str]["cim_dma"]["input"]["mipi"]["rx_index"] = entry_index_;
+      }
+      cim_file.close();
+      std::ofstream ofs(cim_cfg_file_);
+      Json::StyledStreamWriter writer;
+      writer.write(ofs, root);
+      ofs.close();
+    }catch (std::runtime_error& e) {
+      RCLCPP_ERROR(rclcpp::get_logger("mipi_cam"),
+        "[%s]->update  (%s) config error.\n", __func__, cim_cfg_file_.c_str());
+      cim_file.close();
+      return -1;
+    }
+  }
 
+  {
+    std::ifstream vio_file(vio_cfg_file_);
+    if (!vio_file.is_open()) {
+      RCLCPP_ERROR(rclcpp::get_logger("mipi_cam"),
+        "[%s]->open file error (%s).\n", __func__, vio_cfg_file_.c_str());
+      return -1;
+    }
+    Json::Value root;
+    vio_file >> root;
+    int w, h;
+    int pym_layer = -1;
+    try {
+      if (!root.isMember(pipeline_str)) {
+        std::string tmp_pipeline;
+        for (int i = 0; i < 16; i++) {
+          tmp_pipeline  = "pipeline" + std::to_string(i);
+          if (root.isMember(tmp_pipeline)) {
+            Json::Value oldValue = root[tmp_pipeline];
+            root[pipeline_str] = oldValue;
+            root.removeMember(tmp_pipeline);
+            break;
+          }
+        }
+      }
+      root[pipeline_str]["isp"]["ctx_id"] = (entry_index_ * 2);
+      src_width_ = root[pipeline_str]["isp"]["width"].asInt();
+      src_height_ = root[pipeline_str]["isp"]["height"].asInt();
+      u_int32_t ds_roi_en = root[pipeline_str]["pym"]["pym_ctrl"]["ds_roi_en"].asInt();
+      bool ds_en = false;
+
+  #if 0
+      if ((info.width > src_width_) || (info.height > src_height_)) {
+        RCLCPP_ERROR(rclcpp::get_logger("mipi_cam"),
+        "[%s]-> w*h:%d*%d > src_w*src_h:%d*%d\n",
+        __func__, info.width, info.height, src_width_, src_height_);
+        return -1;
+      } else if ((info.width == src_width_) && (info.height == src_height_)) {
+      } else if (info.width >= src_width_ / 2) {
+        ds_pym_layer_ = 0;
+        use_ds_roi_ = true;
+      } else if (info.width >= src_width_ / 4) {
+        ds_pym_layer_ = 1;
+        use_ds_roi_ = true;
+      } else if (info.width >= src_width_ / 8) {
+        ds_pym_layer_ = 2;
+        use_ds_roi_ = true;
+      } else if (info.width >= src_width_ / 16) {
+        ds_pym_layer_ = 3;
+        use_ds_roi_ = true;
+      } else if (info.width >= src_width_ / 32) {
+        ds_pym_layer_ = 4;
+        use_ds_roi_ = true;
+      }
+      if (use_ds_roi_) {
+        root[pipeline_str]["pym"]["pym_ctrl"]["ds_roi"][ds_pym_layer_]["ds_roi_layer"] = 0;
+        root[pipeline_str]["pym"]["pym_ctrl"]["ds_roi"][ds_pym_layer_]["ds_roi_sel"] = 0;
+        root[pipeline_str]["pym"]["pym_ctrl"]["ds_roi"][ds_pym_layer_]["ds_roi_start_top"] = 0;
+        root[pipeline_str]["pym"]["pym_ctrl"]["ds_roi"][ds_pym_layer_]["ds_roi_start_left"] = 0;
+        root[pipeline_str]["pym"]["pym_ctrl"]["ds_roi"][ds_pym_layer_]["ds_roi_region_width"] = info.width;
+        root[pipeline_str]["pym"]["pym_ctrl"]["ds_roi"][ds_pym_layer_]["ds_roi_region_height"] = info.height;
+        root[pipeline_str]["pym"]["pym_ctrl"]["ds_roi"][ds_pym_layer_]["ds_roi_stride_y"] = info.width;
+        root[pipeline_str]["pym"]["pym_ctrl"]["ds_roi"][ds_pym_layer_]["ds_roi_stride_uv"] = info.width;
+        root[pipeline_str]["pym"]["pym_ctrl"]["ds_roi"][ds_pym_layer_]["ds_roi_out_width"] = info.width;
+        root[pipeline_str]["pym"]["pym_ctrl"]["ds_roi"][ds_pym_layer_]["ds_roi_out_height"] = info.height;
+        root[pipeline_str]["pym"]["pym_ctrl"]["ds_roi_en"] = (ds_roi_en | (1 << ds_pym_layer_));
+      }
+  #else
+      if ((info.width > src_width_) || (info.height > src_height_)) {
+        RCLCPP_ERROR(rclcpp::get_logger("mipi_cam"),
+        "[%s]-> w*h:%d*%d > src_w*src_h:%d*%d\n",
+        __func__, info.width, info.height, src_width_, src_height_);
+        return -1;
+      } else if ((info.width == src_width_) && (info.height == src_height_)) {
+      } else {
+        u_int32_t  tmp_width;
+        u_int32_t  tmp_height;
+        u_int32_t  roi_width;
+        u_int32_t  roi_height;
+        u_int32_t  ds_en = root[pipeline_str]["pym"]["pym_ctrl"]["ds_roi_en"].asInt();;
+        ds_pym_layer_ = 0;
+        for (u_int32_t i = 0; i < 4; i++) {
+          if (!(ds_en & (1 << i))) {
+            continue;
+          }
+          tmp_width = root[pipeline_str]["pym"]["pym_ctrl"]["ds_roi"][i]["ds_roi_region_width"].asInt();
+          tmp_height = root[pipeline_str]["pym"]["pym_ctrl"]["ds_roi"][i]["ds_roi_region_height"].asInt();
+          if ((0 == tmp_width) || (0 == tmp_height)) {
+            break;
+          } else if ((info.width == tmp_width) && (info.height == tmp_height)) {
+            ds_pym_layer_ = i;
+            use_ds_roi_ = true;
+            roi_width = tmp_width;
+            roi_height = tmp_height;
+            break;
+          } else if ((info.width <= tmp_width) && (info.height <= tmp_height)) {
+            ds_pym_layer_ = i;
+            use_ds_roi_ = true;
+            roi_width = tmp_width;
+            roi_height = tmp_height;
+          } else if ((info.width > tmp_width) || (info.height > tmp_height)) {
+            break;
+          }
+        }
+        if (use_ds_roi_) {
+          info.width = roi_width;
+          info.height = roi_height;
+        } else {
+          info.width = src_width_;
+          info.height = src_height_;
+        }
+      }
+  #endif
+      vio_file.close();
       std::ofstream ofs(vio_cfg_file_);
       Json::StyledStreamWriter writer;
       writer.write(ofs, root);
-    }
-#else
-    if ((info.width > src_width_) || (info.height > src_height_)) {
+      ofs.close();
+    }catch (std::runtime_error& e) {
       RCLCPP_ERROR(rclcpp::get_logger("mipi_cam"),
-      "[%s]-> w*h:%d*%d > src_w*src_h:%d*%d\n",
-      __func__, info.width, info.height, src_width_, src_height_);
+        "[%s]->update json config error.\n", __func__);
+      vio_file.close();
       return -1;
-    } else if ((info.width == src_width_) && (info.height == src_height_)) {
-    } else {
-      u_int32_t  tmp_width;
-      u_int32_t  tmp_height;
-      u_int32_t  roi_width;
-      u_int32_t  roi_height;
-      u_int32_t  ds_en = root["pipeline0"]["pym"]["pym_ctrl"]["ds_roi_en"].asInt();;
-      ds_pym_layer_ = 0;
-      for (u_int32_t i = 0; i < 4; i++) {
-        if (!(ds_en & (1 << i))) {
-          continue;
-        }
-        tmp_width = root["pipeline0"]["pym"]["pym_ctrl"]["ds_roi"][i]["ds_roi_region_width"].asInt();
-        tmp_height = root["pipeline0"]["pym"]["pym_ctrl"]["ds_roi"][i]["ds_roi_region_height"].asInt();
-        if ((0 == tmp_width) || (0 == tmp_height)) {
-          break;
-        } else if ((info.width == tmp_width) && (info.height == tmp_height)) {
-          ds_pym_layer_ = i;
-          use_ds_roi_ = true;
-          roi_width = tmp_width;
-          roi_height = tmp_height;
-          break;
-        } else if ((info.width <= tmp_width) && (info.height <= tmp_height)) {
-          ds_pym_layer_ = i;
-          use_ds_roi_ = true;
-          roi_width = tmp_width;
-          roi_height = tmp_height;
-        } else if ((info.width > tmp_width) || (info.height > tmp_height)) {
-          break;
-        }
-      }
-      if (use_ds_roi_) {
-        info.width = roi_width;
-        info.height = roi_height;
-      } else {
-        info.width = src_width_;
-        info.height = src_height_;
-      }
     }
-#endif
-  }catch (std::runtime_error& e) {
-    RCLCPP_ERROR(rclcpp::get_logger("mipi_cam"),
-       "[%s]->update json config error.\n", __func__);
-    return -1;
+    
   }
+
   return 0;
 }
 
 int HobotMipiCapIml::initEnv() {
+  std::vector<int> mipi_hosts;
+  std::vector<int> mipi_bus;
+  if (analysis_board_config ()) {
+    if (board_config_m_.size() > 0) {
+      for (auto board : board_config_m_) {
+        mipi_hosts.push_back(board.first);
+        mipi_bus.push_back(board.second.i2c_bus);
+      }
+    } else {
+      mipi_hosts = {0,1,2,3};
+    }
+  } else {
+    mipi_hosts = {0,1,2,3};
+  }
+  listMipiHost(mipi_hosts, mipi_started_, mipi_stoped_);
+  if (mipi_started_.size() > 0) { //暂时不能同时启动多个mipi_cam进程
+    RCLCPP_ERROR(rclcpp::get_logger("mipi_cam"), "The device has already been started\n");
+    return -1;
+  }
+  if (mipi_stoped_.size() == 0) {
+    RCLCPP_ERROR(rclcpp::get_logger("mipi_cam"), "There are no available host.\n");
+    return -1;
+  }
+  if (board_config_m_.size() == 0) {
+    if (mipi_started_.size() > 0) {
+      return -1;
+    }
+  }
+  if (mipi_started_.size() == 0) {
+    std::vector<std::string> sys_cmds;
+    std::string cmd_name;
+    for (int num : mipi_stoped_) {
+      cmd_name = "echo 1 > /sys/class/vps/mipi_host" + std::to_string(num) + "/param/snrclk_en";
+      sys_cmds.push_back(cmd_name);
+      cmd_name = "echo 24000000 > /sys/class/vps/mipi_host" + std::to_string(num) + "/param/snrclk_freq";
+      sys_cmds.push_back(cmd_name);
+      cmd_name = "echo 1 > /sys/class/vps/mipi_host" + std::to_string(num) + "/param/stop_check_instart";
+      sys_cmds.push_back(cmd_name);
+    }
+    for (const auto& sys_cmd : sys_cmds) {
+      system(sys_cmd.data());
+    }
+  }
   return 0;
 }
 
 int HobotMipiCapIml::init(MIPI_CAP_INFO_ST &info) {
   int ret = 0;
   cap_info_ = info;
+  RCLCPP_INFO(rclcpp::get_logger("mipi_cam"),
+    "Rdkultra init start.\n");
 
-  auto mipicap_v = listSensor();
-  if (mipicap_v.size() <= 0) {
-    if (cap_info_.sensor_type.length() == 0) {
-      RCLCPP_ERROR(rclcpp::get_logger("mipi_cam"),
-        "[%s] No camera detected!"
-        " Please check if camera is connected.\r\n",
-        __func__);
-      return -2;
-    }
-  } else {
-    if ((cap_info_.sensor_type.length() == 0)
-         || (cap_info_.sensor_type == "default")) {
-      cap_info_.sensor_type = mipicap_v[0];
-    } else {
-      bool detect_device = false;
-      for (auto sensor : mipicap_v) {
-        if(strcasecmp(sensor.c_str(), cap_info_.sensor_type.c_str()) == 0) {
-          detect_device = true;
-          break;
-        }
-      }
-      if (detect_device == false) {
-        cap_info_.sensor_type = mipicap_v[0];
-      }
-    }
-  }
-
-  ret = UpdateConfig(cap_info_);
-  if (ret) {
+  entry_index_ = cap_info_.channel_;
+  if (selectSensor(cap_info_.sensor_type, entry_index_, sensor_bus_) < 0) {
+    RCLCPP_ERROR(rclcpp::get_logger("mipi_cam"),
+      "not select  sensor!\n");
     return -1;
   }
   int pipeline_id = 0;
-  for (; pipeline_id < 8; pipeline_id++) {
+  for (; pipeline_id < 16; pipeline_id++) {
     if (!checkPipelineOpened(pipeline_id)) {
       break;
     }
   }
-  if (pipeline_id >= 8) {
+  if (pipeline_id >= 16) {
     RCLCPP_ERROR(rclcpp::get_logger("mipi_cam"),
       "pipeline is over number 8\n");
     return -1;
   }
   pipeline_idx_ = pipeline_id;
-  // ret = hb_vio_cfg_check(vio_cfg_file_.c_str(), cam_cfg_file_.c_str(),
-  //       cam_cfg_index_);
-  // if (ret < 0) {
-  //  RCLCPP_ERROR(rclcpp::get_logger("mipi_cam"),
-  //    "vcs check cfg fail vpm:%s\n vin:%s\n index:%d,error:%d\n",
-  //    cam_cfg_file_.c_str(), vio_cfg_file_.c_str(), cam_cfg_index_, ret);
-  //  return -1;
-  // }
+  
+  ret = UpdateConfig(cap_info_);
+  if (ret) {
+    return -1;
+  }
+
+  ret = hb_vio_cfg_check(vio_cfg_file_.c_str(), cam_cfg_file_.c_str(),
+         cam_cfg_index_);
+  if (ret < 0) {
+    RCLCPP_ERROR(rclcpp::get_logger("mipi_cam"),
+      "vcs check cfg fail vpm:%s\n vin:%s\n index:%d,error:%d\n",
+      cam_cfg_file_.c_str(), vio_cfg_file_.c_str(), cam_cfg_index_, ret);
+    return -1;
+   }
+
   ret = hb_vio_init(vio_cfg_file_.c_str());
   if (ret != 0) {
     RCLCPP_ERROR(rclcpp::get_logger("mipi_cam"),
@@ -232,7 +374,7 @@ int HobotMipiCapIml::init(MIPI_CAP_INFO_ST &info) {
     cam_inited_ = true;
   }
   RCLCPP_INFO(rclcpp::get_logger("mipi_cam"),
-    "rdkultra_cam_init success.\n");
+    "Rdkultra camera init success.\n");
   return ret;
 }
 
@@ -306,11 +448,6 @@ int HobotMipiCapIml::stop() {
     return ret;
   }
   return 0;
-}
-
-std::vector<std::string> HobotMipiCapIml::listSensor() {
-  std::vector<std::string> device;
-  return device;
 }
 
 int HobotMipiCapIml::getFrame(int nChnID, int* nVOutW, int* nVOutH,
@@ -507,25 +644,30 @@ int HobotMipiCapIml::getFrame(int nChnID, int* nVOutW, int* nVOutH,
 }
 
 bool HobotMipiCapIml::checkPipelineOpened(int pipeline_idx) {
-  std::string cfg_info;
-  #if 0
-  // 若mipi camera已打开，sif_info返回“pipeid”
-  std::ifstream sif_info("/sys/devices/platform/soc/a4001000.sif/cfg_info");
-  if (sif_info.is_open()) {
-    while (getline(sif_info, cfg_info)) {
-      std::string pipe_line_info =
-            "pipe " + std::to_string(pipeline_idx) + " not inited";
-      if (!cfg_info.compare(pipe_line_info)) {
-        RCLCPP_ERROR(rclcpp::get_logger("mipi_cam"),
-          "mipi camera the pipeline %d is idle.\n", pipeline_idx);
-        return false;
+  std::string fps_info;
+  std::string tmp_str = "cim pipe " + std::to_string(pipeline_idx);
+  std::ifstream fps_file("/sys/devices/platform/soc/47010000.cam_sys/47060000.cim/fps");
+  if (fps_file.is_open()) {
+    while (std::getline(fps_file, fps_info)) {
+      if(strncmp(fps_info.c_str(), tmp_str.c_str(), tmp_str.length()) == 0) {
+        fps_file.close();
+        return true;
       }
     }
   }
-  return true;
-  #else
+  fps_file.close();
+  tmp_str = "cimdma pipe " + std::to_string(pipeline_idx);
+  std::ifstream cim_dma_fps_file("/sys/devices/platform/soc/47010000.cam_sys/47180000.cim_dma/fps");
+  if (cim_dma_fps_file.is_open()) {
+    while (std::getline(cim_dma_fps_file, fps_info)) {
+      if(strncmp(fps_info.c_str(), tmp_str.c_str(), tmp_str.length()) == 0) {
+        cim_dma_fps_file.close();
+        return true;
+      }
+    }
+  }
+  cim_dma_fps_file.close();
   return false;
-  #endif
 }
 
 int HobotMipiCapIml::getCapInfo(MIPI_CAP_INFO_ST &info) {
@@ -583,8 +725,155 @@ bool HobotMipiCapIml::detectSensor(SENSOR_ID_T &sensor_info, int i2c_bus) {
   return false;
 }
 
+bool HobotMipiCapIml::analysis_board_config() {
+  std::string board_type;
+  bool auto_detect = false;
+  std::ifstream som_name("/sys/class/socinfo/board_id");
+  if (som_name.is_open()) {
+    if (!getline(som_name, board_type)) {
+      som_name.close();
+      return false;
+    }
+  } else {
+    return false;
+  }
+  som_name.close();
+
+  std::ifstream board_config("/etc/board_config.json");
+  if (board_config.is_open() == false) {
+    return false;
+  }
+  std::string  board_name = "board_" + board_type;
+  Json::Value root;
+  board_config >> root;
+  std::string reset;
+  int i2c_bus;
+  int mipi_host;
+  int gpio_num;
+  int reset_level;
+  std::regex regexPattern(R"((\d+):(\w+))");
+  try {
+    int camera_num = root[board_name]["camera_num"].asInt();
+    for (int i = 0; i < camera_num; i++) {
+      mipi_host = root[board_name]["cameras"][i]["mipi_host"].asInt();
+      i2c_bus = root[board_name]["cameras"][i]["i2c_bus"].asInt();
+      board_config_m_[mipi_host].mipi_host = mipi_host;
+      board_config_m_[mipi_host].i2c_bus = i2c_bus;
+      board_config_m_[mipi_host].reset_flag = false;
+      if (root[board_name]["cameras"][i].isMember("reset")){
+        reset = root[board_name]["cameras"][i]["reset"].asString();
+        std::smatch matches;
+        if (std::regex_search(reset, matches, regexPattern)) {
+          board_config_m_[mipi_host].reset_gpio = std::stoi(matches[1]);
+          if (matches[2] == "low") {
+            board_config_m_[mipi_host].reset_level = 1;
+          } else {
+            board_config_m_[mipi_host].reset_level = 0;
+          } 
+          board_config_m_[mipi_host].reset_flag = true;
+        } 
+      }
+    }
+  }catch (std::runtime_error& e) {
+    return false;
+  }
+  return true;
+}
+
+int HobotMipiCapIml::selectSensor(std::string &sensor, int &host, int &i2c_bus) {
+
+  // mipi sensor的信息数组
+  SENSOR_ID_T sensor_id_list[] = {
+     {5, 0x10, I2C_ADDR_16, 0x0000, "imx219"},
+  };
+  std::vector<int> i2c_buss= {1,2,4,5,6};
+
+  SENSOR_ID_T *sensor_ptr = nullptr;
+  for (auto sensor_id : sensor_id_list) {
+    if(strcasecmp(sensor_id.sensor_name, sensor.c_str()) == 0) {
+      sensor_ptr = &sensor_id;
+      break;
+    }
+  }
+  bool sensor_flag = false;
+  if (sensor_ptr) {
+    if (board_config_m_.size() > 0) {
+      for (auto board : board_config_m_) {
+        std::vector<int>::iterator it = std::find(mipi_stoped_.begin(), mipi_stoped_.end(), board.second.mipi_host);
+        if (it == mipi_stoped_.end()) {
+           continue;
+        }
+        if (detectSensor(*sensor_ptr, board.second.i2c_bus)) {
+          host = board.second.mipi_host;
+          i2c_bus = board.second.i2c_bus;
+          sensor_flag = true;
+          return 0;
+        }
+      }
+    } else {
+      if (mipi_started_.size() > 0) {
+        return -1;
+      } else {
+        for (auto num : i2c_buss) {
+          if (detectSensor(*sensor_ptr, num)) {
+            // host = mipi_stoped_[0];
+            i2c_bus = num;
+            sensor_flag = true;
+            return 0;
+          }
+        }
+      }
+    }
+  }
+  if (board_config_m_.size() > 0) {
+    for (auto board : board_config_m_) {
+      if (board.second.mipi_host == host) {
+        for (auto sensor_id : sensor_id_list) {
+          if (detectSensor(sensor_id, board.second.i2c_bus)) {
+            host = board.second.mipi_host;
+            i2c_bus = board.second.i2c_bus;
+            sensor = sensor_id.sensor_name;
+            sensor_flag = true;
+            return 0;
+          }
+        }
+      }
+    }
+  }
+  if (board_config_m_.size() > 0) {
+    for (auto board : board_config_m_) {
+      std::vector<int>::iterator it = std::find(mipi_stoped_.begin(), mipi_stoped_.end(), board.second.mipi_host);
+      if (it == mipi_stoped_.end()) {
+          continue;
+      }
+      for (auto sensor_id : sensor_id_list) {
+        if (detectSensor(sensor_id, board.second.i2c_bus)) {
+          host = board.second.mipi_host;
+          i2c_bus = board.second.i2c_bus;
+          sensor = sensor_id.sensor_name;
+          sensor_flag = true;
+          return 0;
+        }
+      }
+    }
+  }
+  for (auto num : i2c_buss) {
+    for (auto sensor_id : sensor_id_list) {
+      if (detectSensor(sensor_id, num)) {
+        // host = mipi_stoped_[0];
+        i2c_bus = num;
+        sensor = sensor_id.sensor_name;
+        sensor_flag = true;
+        return 0;
+      }
+    }
+  }
+  return -1;
+}
+
 int HobotMipiCapImlRDKRdkultra::initEnv() {
-  std::vector<int> mipi_hosts = {0};
+  #if 0
+  std::vector<int> mipi_hosts = {0,1};
   std::vector<int> mipi_started;
   std::vector<int> mipi_stoped;
   listMipiHost(mipi_hosts, mipi_started, mipi_stoped);
@@ -617,25 +906,54 @@ int HobotMipiCapImlRDKRdkultra::initEnv() {
   for (const auto& sys_cmd : sys_cmds) {
     system(sys_cmd.data());
   }
-  return 0;
-}
-
-std::vector<std::string> HobotMipiCapImlRDKRdkultra::listSensor() {
-
-  // mipi sensor的信息数组
-  SENSOR_ID_T sensor_id_list[] = {
-    {5, 0x10, I2C_ADDR_16, 0x0000, "imx219"},
-  };
-  std::vector<std::string> device;
-  std::vector<int> i2c_buss= {5,6};
-  for (auto num : i2c_buss) {
-    for (auto sensor_id : sensor_id_list) {
-      if (detectSensor(sensor_id, num)) {
-        device.push_back(sensor_id.sensor_name);
+  #else 
+  std::vector<int> mipi_hosts;
+  std::vector<int> mipi_bus;
+  if (analysis_board_config ()) {
+    if (board_config_m_.size() > 0) {
+      for (auto board : board_config_m_) {
+        mipi_hosts.push_back(board.first);
+        mipi_bus.push_back(board.second.i2c_bus);
       }
+    } else {
+      mipi_hosts = {0,1,2,3};
+    }
+  } else {
+    mipi_hosts = {0,1,2,3};
+  }
+  listMipiHost(mipi_hosts, mipi_started_, mipi_stoped_);
+  if ((mipi_stoped_.size() == 0))  {
+    return -1;
+  }
+  std::vector<std::string> sys_cmds;
+  std::string cmd_name;
+  #if 0
+  for (auto board : board_config_m_) {
+    if (board.second.reset_flag) {
+      cmd_name = "echo " + std::to_string(board.second.reset_gpio) + " > /sys/class/gpio/export";
+      sys_cmds.push_back(cmd_name);
+      cmd_name = "echo out > /sys/class/gpio/gpio" + std::to_string(board.second.reset_gpio) + "/direction";
+      sys_cmds.push_back(cmd_name);
+      cmd_name = "echo " + std::to_string(board.second.reset_level) + " > /sys/class/gpio/gpio" + std::to_string(board.second.reset_gpio) + "/value";
+      sys_cmds.push_back(cmd_name);
+      cmd_name = "echo " + std::to_string(board.second.reset_gpio) + " > /sys/class/gpio/unexport";
+      sys_cmds.push_back(cmd_name);
     }
   }
-  return device;
+#endif
+  for (int num : mipi_stoped_) {
+    cmd_name = "echo 1 > /sys/class/vps/mipi_host" + std::to_string(num) + "/param/snrclk_en";
+    sys_cmds.push_back(cmd_name);
+    cmd_name = "echo 24000000 > /sys/class/vps/mipi_host" + std::to_string(num) + "/param/snrclk_freq";
+    sys_cmds.push_back(cmd_name);
+    cmd_name = "echo 1 > /sys/class/vps/mipi_host" + std::to_string(num) + "/param/stop_check_instart";
+    sys_cmds.push_back(cmd_name);
+  }
+  for (const auto& sys_cmd : sys_cmds) {
+    system(sys_cmd.data());
+  }
+  #endif
+  return 0;
 }
 
 }  // namespace mipi_cam

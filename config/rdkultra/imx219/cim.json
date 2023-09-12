@@ -42,6 +42,43 @@
 									"isp_ch3": 0
 							}
 					}
-			}
+			},
+			"cim_dma":      {
+				"input":        {
+						"mipi": {
+								"enable":       1,
+								"width":        1920,
+								"height":       1080,
+								"format":       43,
+								"vc_index":     0,
+								"rx_index":     2,
+								"raw16_splict": 0,
+								"dbg_clear":    0,
+								"y_uv_swap":    0,
+								"tag_enable":   0,
+								"function":     {
+										"enable_frame_id":      1,
+										"enable_DMA":   1,
+										"pack_mode":    1,
+										"enable_bypass":        0,
+										"enable_id_decoder":    0,
+										"set_init_frame_id":    1,
+										"set_bypass_channels":  1
+								}
+						}
+				},
+				"output":       {
+						"ddr":  {
+								"enable":       1,
+								"format":       43,
+								"width":        1920,
+								"height":       1080,
+								"buf_num":      6,
+								"cached":       0,
+								"use_ispbuf":   1
+						}
+				}
+		}
+
 	}
 }
