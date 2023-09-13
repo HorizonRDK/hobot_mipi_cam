@@ -282,6 +282,7 @@ bool MipiCamIml::getImage(builtin_interfaces::msg::Time &stamp,
     NV12_TO_BGR24((unsigned char *)image_nv12_->image,
                   (unsigned char *)&data[0], width, height);
     encoding = "bgr8";
+    step = width * 3;
   } else if (nodePare_.out_format_name_ == "gray") {
     data_size = nodePare_.image_width_ * nodePare_.image_height_;
     data.resize(data_size);  // step * height);
@@ -295,6 +296,7 @@ bool MipiCamIml::getImage(builtin_interfaces::msg::Time &stamp,
           timestamp, true))
     return false;
     encoding = "mono8";
+    step = width;
   } else {
     data.resize(data_size);  // step * height);
     if (mipiCap_ptr_->getFrame(
@@ -307,10 +309,10 @@ bool MipiCamIml::getImage(builtin_interfaces::msg::Time &stamp,
           timestamp))
     return false;
     encoding = "nv12";
+    step = width;
   }
   stamp.sec = timestamp / 1e9;
   stamp.nanosec = timestamp - stamp.sec * 1e9;
-  step = width;
   {
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);
