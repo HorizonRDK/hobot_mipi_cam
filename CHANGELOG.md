@@ -1,5 +1,10 @@
 # Changelog for package mipi_cam
 
+tros_2.1.6 (2023-09-13)
+------------------
+1. RDK Ultra支持sensor自适应选择。
+2. rgb8的image msg->step=w*3，解决标定node的BUG。
+
 tros_2.1.4 (2023-08-08)
 ------------------
 1. 输出解析出来的io_method_name_配置参数。
