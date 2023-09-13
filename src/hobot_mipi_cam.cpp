@@ -309,7 +309,7 @@ bool MipiCamIml::getImage(builtin_interfaces::msg::Time &stamp,
           timestamp))
     return false;
     encoding = "nv12";
-    step = width * 1.5;
+    step = width;
   }
   stamp.sec = timestamp / 1e9;
   stamp.nanosec = timestamp - stamp.sec * 1e9;
