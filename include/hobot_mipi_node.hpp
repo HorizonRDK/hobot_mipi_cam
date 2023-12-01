@@ -27,7 +27,7 @@
 #include "sensor_msgs/msg/camera_info.hpp"
 
 #include "sensor_msgs/msg/image.hpp"
-#include "std_srvs/srv/set_bool.hpp"
+// #include "std_srvs/srv/set_bool.hpp"
 #include <std_msgs/msg/string.hpp>
 
 #ifdef USING_HBMEM
