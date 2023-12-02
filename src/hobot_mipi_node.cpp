@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "hobot_mipi_node.hpp"
-
 #include <sstream>
 #include <stdarg.h>
 #include <memory>
@@ -21,6 +19,8 @@
 #include <vector>
 #include <fstream>
 
+#include "hobot_mipi_node.hpp"
+#include "rclcpp_components/register_node_macro.hpp"
 
 #define PUB_BUF_NUM 5
 namespace mipi_cam {
@@ -277,5 +277,7 @@ void MipiCamNode::save_yuv(const builtin_interfaces::msg::Time stamp,
     out.close();
   }
 }
+
+RCLCPP_COMPONENTS_REGISTER_NODE(mipi_cam::MipiCamNode)
 
 }  // namespace mipi_cam

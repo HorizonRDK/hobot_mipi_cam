@@ -39,6 +39,7 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(yaml_cpp_vendor REQUIRED)
+find_package(rclcpp_components REQUIRED)
 
 #set(PREFIX_PATH x3)
 
@@ -106,6 +107,15 @@ add_executable(${PROJECT_NAME}
   ${SRC_PLATFORM_FILE}
 )
 
+add_library(mipi_cam_component SHARED
+  src/camera.cpp
+  src/hobot_mipi_node.cpp
+  src/hobot_mipi_cam.cpp
+  src/${PREFIX_PATH}/hobot_mipi_cap_iml.cpp
+  src/${PREFIX_PATH}/hobot_mipi_factory.cpp
+  ${SRC_PLATFORM_FILE}
+)
+
 set(BASE_LIBRARIES pthread dl)
 if(PLATFORM_X3)
   set(X3_HAPI_LIB isp_algo z hbmedia isp ion multimedia iar tinyalsa cjson diag gdcbin  jsoncpp)
@@ -125,8 +135,9 @@ target_link_libraries(${PROJECT_NAME}
 ament_target_dependencies(
   ${PROJECT_NAME}
   rclcpp
+  "rclcpp_components"
   sensor_msgs
-  yaml_cpp_vendor
+  # yaml_cpp_vendor
   )
 
 if(BUILD_HBMEM)
@@ -139,6 +150,21 @@ ament_target_dependencies(
   hbm_img_msgs
 )
 endif()
+
+
+target_compile_definitions(mipi_cam_component
+  PRIVATE "COMPOSITION_BUILDING_DLL")
+target_link_libraries(mipi_cam_component
+  ${BASE_LIBRARIES} ${X3_HAPI_LIB} yaml-cpp
+)
+ament_target_dependencies(mipi_cam_component
+  "sensor_msgs"
+  "yaml_cpp_vendor"
+  "rclcpp_components"
+  "std_msgs")
+rclcpp_components_register_nodes(mipi_cam_component "mipi_cam::MipiCamNode")
+set(node_plugins "${node_plugins}mipi_cam::MipiCamNode;$<TARGET_FILE:mipi_cam_component>\n")
+
 
 # Install executables
 install(
