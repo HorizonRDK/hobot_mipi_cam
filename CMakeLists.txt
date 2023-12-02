@@ -107,15 +107,6 @@ add_executable(${PROJECT_NAME}
   ${SRC_PLATFORM_FILE}
 )
 
-add_library(mipi_cam_component SHARED
-  src/camera.cpp
-  src/hobot_mipi_node.cpp
-  src/hobot_mipi_cam.cpp
-  src/${PREFIX_PATH}/hobot_mipi_cap_iml.cpp
-  src/${PREFIX_PATH}/hobot_mipi_factory.cpp
-  ${SRC_PLATFORM_FILE}
-)
-
 set(BASE_LIBRARIES pthread dl)
 if(PLATFORM_X3)
   set(X3_HAPI_LIB isp_algo z hbmedia isp ion multimedia iar tinyalsa cjson diag gdcbin  jsoncpp)
@@ -152,6 +143,14 @@ ament_target_dependencies(
 endif()
 
 
+add_library(mipi_cam_component SHARED
+  src/camera.cpp
+  src/hobot_mipi_node.cpp
+  src/hobot_mipi_cam.cpp
+  src/${PREFIX_PATH}/hobot_mipi_cap_iml.cpp
+  src/${PREFIX_PATH}/hobot_mipi_factory.cpp
+  ${SRC_PLATFORM_FILE}
+)
 target_compile_definitions(mipi_cam_component
   PRIVATE "COMPOSITION_BUILDING_DLL")
 target_link_libraries(mipi_cam_component
@@ -189,5 +188,11 @@ install(DIRECTORY
   launch
   DESTINATION share/${PROJECT_NAME}/
 )
+
+install(TARGETS
+  mipi_cam_component
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin)
 
 ament_package()

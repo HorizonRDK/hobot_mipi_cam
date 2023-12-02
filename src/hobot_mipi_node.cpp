@@ -32,7 +32,7 @@ MipiCamNode::MipiCamNode(const rclcpp::NodeOptions& node_options)
       camera_calibration_info_(new sensor_msgs::msg::CameraInfo()) {
 
   getParams();
-  // init();
+  init();
 }
 
 MipiCamNode::~MipiCamNode() {
