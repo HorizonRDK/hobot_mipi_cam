@@ -135,10 +135,10 @@ void MipiCamNode::init() {
   }
   if (io_method_name_.compare("ros") == 0) {
     image_pub_ =
-      this->create_publisher<sensor_msgs::msg::Image>("image_raw", PUB_BUF_NUM);
+      this->create_publisher<sensor_msgs::msg::Image>("image_raw", rclcpp::SensorDataQoS());
   }
   info_pub_ = this->create_publisher<sensor_msgs::msg::CameraInfo>(
-      "camera_info", PUB_BUF_NUM);
+      "camera_info", rclcpp::SensorDataQoS());
 
   while (frame_id_ == "") {
     RCLCPP_WARN_ONCE(
@@ -165,7 +165,7 @@ void MipiCamNode::init() {
     // 创建hbmempub
     publisher_hbmem_ =
         this->create_publisher_hbmem<hbm_img_msgs::msg::HbmMsg1080P>(
-            "hbmem_img", PUB_BUF_NUM);
+            "hbmem_img", rclcpp::SensorDataQoS());
   }
 #endif
 
@@ -184,9 +184,15 @@ void MipiCamNode::init() {
                 "get camera calibration parameters failed");
   }
   if (io_method_name_.compare("shared_mem") != 0) {
-    timer_ = this->create_wall_timer(
-        std::chrono::milliseconds(static_cast<int64_t>(period_ms)),
-        std::bind(&MipiCamNode::update, this));
+    // timer_ = this->create_wall_timer(
+    //     std::chrono::milliseconds(static_cast<int64_t>(period_ms)),
+    //     std::bind(&MipiCamNode::update, this));
+    
+    img_pub_task_future_ = std::async(std::launch::async, [this](){
+      while(rclcpp::ok()) {
+        update();
+      }
+    });
   } else {
     timer_ = this->create_wall_timer(
         std::chrono::milliseconds(static_cast<int64_t>(period_ms)),
@@ -218,8 +224,27 @@ void MipiCamNode::update() {
       RCLCPP_ERROR(rclcpp::get_logger("mipi_node"), "grab failed");
       return;
     }
-    save_yuv(img_->header.stamp, (void *)&img_->data[0], img_->data.size());
+      
+    {
+      // 修改数据时间戳，用于测试传输latency
+      struct timespec ts;
+      clock_gettime(CLOCK_REALTIME, &ts);
+      img_->header.stamp.sec = ts.tv_sec;
+      img_->header.stamp.nanosec = ts.tv_nsec;
+    }
+    
+    // save_yuv(img_->header.stamp, (void *)&img_->data[0], img_->data.size());
+    
+    RCLCPP_INFO_STREAM(rclcpp::get_logger("mipi_cam"),
+              "got image ts: " << img_->header.stamp.sec << "." << img_->header.stamp.nanosec);
+
     image_pub_->publish(*img_);
+
+    RCLCPP_INFO_STREAM(rclcpp::get_logger("mipi_cam"),
+              "published image ts: " << img_->header.stamp.sec << "." << img_->header.stamp.nanosec);
+    return;
+
+
     if (sendCalibration(img_->header.stamp)) {
       RCLCPP_INFO(rclcpp::get_logger("mipi_node"), "publish camera info.\n");
     } else {
@@ -246,9 +271,26 @@ void MipiCamNode::hbmemUpdate() {
                      "hbmemUpdate grab img failed");
         return;
       }
+
+      {
+        // 修改数据时间戳，用于测试传输latency
+        struct timespec ts;
+        clock_gettime(CLOCK_REALTIME, &ts);
+        msg.time_stamp.sec = ts.tv_sec;
+        msg.time_stamp.nanosec = ts.tv_nsec;
+      }
+      RCLCPP_INFO_STREAM(rclcpp::get_logger("mipi_cam"),
+                "got image ts: " << msg.time_stamp.sec << "." << msg.time_stamp.nanosec);
+
       save_yuv(msg.time_stamp, (void *)&msg.data, msg.data_size);
       msg.index = mSendIdx++;
+      auto time_stamp = msg.time_stamp;
       publisher_hbmem_->publish(std::move(loanedMsg));
+      
+      RCLCPP_INFO_STREAM(rclcpp::get_logger("mipi_cam"),
+                "published image ts: " << time_stamp.sec << "." << time_stamp.nanosec);
+
+
       if (sendCalibration(msg.time_stamp)) {
         RCLCPP_INFO(rclcpp::get_logger("mipi_node"), "publish camera info.\n");
       } else {
