@@ -30,6 +30,8 @@
 // #include "std_srvs/srv/set_bool.hpp"
 #include <std_msgs/msg/string.hpp>
 
+#include "std_msgs/msg/bool.hpp"
+
 #ifdef USING_HBMEM
 #include "hb_mem_mgr.h"
 #include "hbm_img_msgs/msg/hbm_msg1080_p.hpp"
@@ -58,6 +60,9 @@ class MipiCamNode : public rclcpp::Node {
   sensor_msgs::msg::CameraInfo::UniquePtr camera_calibration_info_;
 
   rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr image_pub_ = nullptr;
+  rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr ros_img_ctrl_ = nullptr;
+  bool en_img_pub_ = true;
+
   rclcpp::Publisher<sensor_msgs::msg::CameraInfo>::SharedPtr info_pub_ = nullptr;
   rclcpp::TimerBase::SharedPtr timer_;
 

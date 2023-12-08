@@ -125,6 +125,16 @@ void MipiCamNode::getParams() {
 
 void MipiCamNode::init() {
   if (m_bIsInit) return;
+  
+  ros_img_ctrl_ = create_subscription<std_msgs::msg::Bool>("hobot_img_ctrl", 10,
+    [this](const std_msgs::msg::Bool::ConstSharedPtr msg){
+      if (rclcpp::ok() && msg) {
+        en_img_pub_ = msg->data;
+        RCLCPP_WARN(rclcpp::get_logger("mipi_node"),
+                  "setting en_img_pub_: %d", en_img_pub_);
+      }
+    }
+  );
 
   mipiCam_ptr_ = MipiCam::create_mipicam();
   if (!mipiCam_ptr_ || mipiCam_ptr_->init(nodePare_)) {
@@ -189,6 +199,18 @@ void MipiCamNode::init() {
     //     std::bind(&MipiCamNode::update, this));
     img_pub_task_future_ = std::async(std::launch::async, [this](){
       while(rclcpp::ok()) {
+        // if (!image_pub_->is_activated()) {
+        //   RCLCPP_INFO(
+        //     get_logger(), "Lifecycle publisher is currently inactive. Messages are not published.");
+        //   std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        //   continue;
+        // }
+        if (!en_img_pub_) {
+          RCLCPP_INFO(
+            get_logger(), "img pub is not enabled");
+          std::this_thread::sleep_for(std::chrono::milliseconds(100));
+          continue;
+        }
         update();
         // std::this_thread::sleep_for(std::chrono::milliseconds(100));
       }
