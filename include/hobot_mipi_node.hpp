@@ -61,6 +61,8 @@ class MipiCamNode : public rclcpp::Node {
   rclcpp::Publisher<sensor_msgs::msg::CameraInfo>::SharedPtr info_pub_ = nullptr;
   rclcpp::TimerBase::SharedPtr timer_;
 
+  std::future<void> img_pub_task_future_;
+
 #ifdef USING_HBMEM
   int32_t mSendIdx = 0;
   rclcpp::TimerBase::SharedPtr timer_hbmem_;

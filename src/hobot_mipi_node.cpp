@@ -184,9 +184,15 @@ void MipiCamNode::init() {
                 "get camera calibration parameters failed");
   }
   if (io_method_name_.compare("shared_mem") != 0) {
-    timer_ = this->create_wall_timer(
-        std::chrono::milliseconds(static_cast<int64_t>(period_ms)),
-        std::bind(&MipiCamNode::update, this));
+    // timer_ = this->create_wall_timer(
+    //     std::chrono::milliseconds(static_cast<int64_t>(period_ms)),
+    //     std::bind(&MipiCamNode::update, this));
+    img_pub_task_future_ = std::async(std::launch::async, [this](){
+      while(rclcpp::ok()) {
+        update();
+        // std::this_thread::sleep_for(std::chrono::milliseconds(100));
+      }
+    });
   } else {
     timer_ = this->create_wall_timer(
         std::chrono::milliseconds(static_cast<int64_t>(period_ms)),
