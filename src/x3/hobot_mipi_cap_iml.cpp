@@ -431,6 +431,7 @@ int HobotMipiCapIml::parseConfig(std::string sensor_name,
   RCLCPP_INFO(rclcpp::get_logger("mipi_cam"),
       "[%s]-> w:h=%d:%d ,fps=%d sucess.\n", __func__, w, h, fps);
   vps_infos_.m_vps_info[0].m_vps_grp_id = pipeline_id_;
+  return 0;
 }
 
 bool HobotMipiCapIml::checkPipelineOpened(int pipeline_idx) {
@@ -453,6 +454,7 @@ bool HobotMipiCapIml::checkPipelineOpened(int pipeline_idx) {
 
 int HobotMipiCapIml::getCapInfo(MIPI_CAP_INFO_ST &info) {
   info = cap_info_;
+  return 0;
 }
 
 void HobotMipiCapIml::listMipiHost(std::vector<int> &mipi_hosts, 

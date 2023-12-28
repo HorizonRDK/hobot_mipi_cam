@@ -672,6 +672,7 @@ bool HobotMipiCapIml::checkPipelineOpened(int pipeline_idx) {
 
 int HobotMipiCapIml::getCapInfo(MIPI_CAP_INFO_ST &info) {
   info = cap_info_;
+  return 0;
 }
 
 void HobotMipiCapIml::listMipiHost(std::vector<int> &mipi_hosts, 
