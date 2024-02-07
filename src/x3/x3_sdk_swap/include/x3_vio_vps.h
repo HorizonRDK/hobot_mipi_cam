@@ -16,7 +16,8 @@ void print_vps_chn_attr(VPS_CHN_ATTR_S *chn_attr);
 
 int x3_vps_group_init(int vps_grp_id, VPS_GRP_ATTR_S *vps_grp_attr);
 int x3_setpu_gdc(int vps_grp_id, char *gdc_config_file, ROTATION_E enRotation);
-int x3_vps_chn_init(int vps_grp_id, int vps_chn_id, VPS_CHN_ATTR_S *chn_attr);
+int x3_vps_chn_init(int vps_grp_id, int vps_chn_id, VPS_CHN_ATTR_S *chn_attr,
+                    ROTATION_E enRotation);
 int x3_vps_start(uint32_t vpsGrpId);
 void x3_vps_stop(int vpsGrpId);
 void x3_vps_deinit(int vpsGrpId);

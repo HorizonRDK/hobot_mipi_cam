@@ -56,6 +56,8 @@ void MipiCamNode::getParams() {
   this->declare_parameter("out_format", "bgr8");   // nv12
   this->declare_parameter("video_device", "");  // "F37");
   this->declare_parameter("camera_calibration_file_path", "");
+  this->declare_parameter("gdc_file_path", "empty");
+  this->declare_parameter("rotate_degree", 0);
   auto parameters_client = std::make_shared<rclcpp::SyncParametersClient>(this);
   for (auto& parameter :
        parameters_client->get_parameters({"config_path",
@@ -68,7 +70,9 @@ void MipiCamNode::getParams() {
                                           "image_width",
                                           "io_method",
                                           "video_device",
-                                          "camera_calibration_file_path"})) {
+                                          "camera_calibration_file_path",
+                                          "gdc_file_path",
+                                          "rotate_degree"})) {
     if (parameter.get_name() == "config_path") {
       RCLCPP_INFO(rclcpp::get_logger("mipi_node"),
                   "config_path value: %s",
@@ -115,6 +119,13 @@ void MipiCamNode::getParams() {
       RCLCPP_INFO(rclcpp::get_logger("mipi_node"),
                   "camera_calibration_file_path value: %s",
                   parameter.value_to_string().c_str());
+    } else if (parameter.get_name() == "gdc_file_path") {
+      nodePare_.gdc_file_path_ = parameter.value_to_string();
+      RCLCPP_INFO(rclcpp::get_logger("mipi_node"),
+            "gdc_file_path value: %s",
+            parameter.value_to_string().c_str());
+    } else if (parameter.get_name() == "rotate_degree") {
+      nodePare_.rotate_degree_ = parameter.as_int();
     } else {
       RCLCPP_WARN(rclcpp::get_logger("mipi_node"),
                   "Invalid parameter name: %s",

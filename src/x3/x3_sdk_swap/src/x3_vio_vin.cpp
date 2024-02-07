@@ -169,7 +169,7 @@ static int x3_mipi_start(int mipiIdx)
 {
 	int ret = 0;
 
-	ret = HB_MIPI_ResetMipi(mipiIdx);
+  ret = HB_MIPI_ResetMipi(mipiIdx);
 	if (ret < 0)
 	{
 		RCLCPP_ERROR(rclcpp::get_logger("mipi_cam"), "HB_MIPI_ResetMipi error, ret= %d\n", ret);

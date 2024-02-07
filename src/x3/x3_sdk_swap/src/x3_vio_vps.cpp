@@ -83,10 +83,11 @@ int x3_setpu_gdc(int vps_grp_id, char *gdc_config_file, ROTATION_E enRotation)
 	fread(buf, 1, len, gdc_fd);
 	fclose(gdc_fd);
 
-	ret = HB_VPS_SetGrpGdc(vps_grp_id, buf, len, enRotation);
+	ret = HB_VPS_SetGrpGdc(vps_grp_id, buf, len, ROTATION_E::ROTATION_0);
 	if (ret) {
 	    RCLCPP_ERROR(rclcpp::get_logger("mipi_cam"),
 		  "HB_VPS_SetGrpGdc error!!!\n");
+      free(buf);  
 	    return -3;
 	} else {
 	    RCLCPP_INFO(rclcpp::get_logger("mipi_cam"),
@@ -96,11 +97,15 @@ int x3_setpu_gdc(int vps_grp_id, char *gdc_config_file, ROTATION_E enRotation)
 	return 0;
 }
 
-int x3_vps_chn_init(int vps_grp_id, int vps_chn_id, VPS_CHN_ATTR_S *chn_attr) {
+int x3_vps_chn_init(int vps_grp_id, int vps_chn_id, VPS_CHN_ATTR_S *chn_attr,
+                    ROTATION_E enRotation) {
     /*VPS_CHN_ATTR_S chn_attr;*/
     int ret = 0;
 	ret = HB_VPS_SetChnAttr(vps_grp_id, vps_chn_id, chn_attr);
-	if (ret) {
+	if (enRotation != ROTATION_0) {
+    HB_VPS_SetChnRotate(vps_grp_id, vps_chn_id, enRotation);
+  }
+  if (ret) {
 		RCLCPP_ERROR(rclcpp::get_logger("mipi_cam"),
 		   "[%s]->HB_VPS_SetChnAttr gID=%d,cID=%d,w:h=%d:%d error, ret:%d.\n",
 			__func__,vps_grp_id, vps_chn_id, chn_attr->width,chn_attr->height,ret);

@@ -36,6 +36,27 @@
 
 namespace mipi_cam {
 
+static void initGdcParams(x3_vps_info_t &vps_info, MIPI_CAP_INFO_ST &cap_info) {
+  vps_info.m_need_gdc = cap_info.need_gdc_;
+  ROTATION_E e;
+  switch (cap_info.rotate_degree_) {
+    case 90:
+      e = ROTATION_E::ROTATION_90;
+      break;
+    case 180:
+      e = ROTATION_E::ROTATION_180;
+      break;
+    case 270:
+      e = ROTATION_E::ROTATION_270;
+      break;
+    default:
+      e = ROTATION_E::ROTATION_0;
+  }
+  memcpy(vps_info.m_gdc_info.m_gdc_config, cap_info.gdc_file_path_,
+          strlen(cap_info.gdc_file_path_) + 1);
+  vps_info.m_gdc_info.m_rotation = e;
+}
+
 int HobotMipiCapIml::initEnv() {
   std::vector<int> mipi_hosts;
   std::vector<int> mipi_bus;
@@ -150,6 +171,7 @@ int HobotMipiCapIml::init(MIPI_CAP_INFO_ST &info) {
   RCLCPP_INFO(rclcpp::get_logger("mipi_cam"), "x3_vin_init ok!\n");
   // 2. 初始化 vps，创建 group
   if (vps_enable_) {
+    initGdcParams(vps_infos_.m_vps_info[0], info);
     ret = x3_vps_init_wrap(&vps_infos_.m_vps_info[0]);
     if (ret) {
       RCLCPP_ERROR(rclcpp::get_logger("mipi_cam"),
@@ -334,12 +356,14 @@ int HobotMipiCapIml::getFrame(int nChnID, int* nVOutW, int* nVOutH,
         "buf size(%d) < frame size(%d)", bufsize, *len);
       return -1;
     }
-    ISP_AE_PARAM_S stAeParam;
-    stAeParam.GainOpType = static_cast<ISP_OP_TYPE_E>(0);
-    stAeParam.IntegrationOpType = static_cast<ISP_OP_TYPE_E>(0);
-    ret = HB_ISP_GetAeParam(vin_info_.pipe_id, &stAeParam);
-    if (ret == 0) {
-      timestamp += stAeParam.u32IntegrationTime / 2 * 1e3;
+    if (!is_global_shutter_) {
+      ISP_AE_PARAM_S stAeParam;
+      stAeParam.GainOpType = static_cast<ISP_OP_TYPE_E>(0);
+      stAeParam.IntegrationOpType = static_cast<ISP_OP_TYPE_E>(0);
+      ret = HB_ISP_GetAeParam(vin_info_.pipe_id, &stAeParam);
+      if (ret == 0) {
+        timestamp += stAeParam.u32IntegrationTime / 2 * 1e3;
+      }
     }
     if (stride == width) {
       memcpy(frame_buf, vOut.img_addr.addr[0], width * height);
@@ -400,6 +424,9 @@ int HobotMipiCapIml::parseConfig(std::string sensor_name,
     imx477_linear_vin_param_init(&vin_info_);
   } else if(strcasecmp(sensor_name.c_str(), "ov5647") == 0) {
     ov5647_linear_vin_param_init(&vin_info_);
+  } else if(strcasecmp(sensor_name.c_str(), "sc132gs") == 0) {
+    sc132gs_linear_vin_param_init(&vin_info_);
+    is_global_shutter_ = true;
   } else {
     RCLCPP_ERROR(rclcpp::get_logger("mipi_cam"),
       "[%s]->sensor name not found(%s).\n", __func__, sensor_name.c_str());
@@ -574,6 +601,7 @@ int HobotMipiCapIml::selectSensor(std::string &sensor, int &host, int &i2c_bus) 
     {1, 0x36, I2C_ADDR_16, 0x300A, "ov5647"},  // ov5647 for x3-pi
     {1, 0x1a, I2C_ADDR_16, 0x0000, "imx586"},  // imx586
     {1, 0x29, I2C_ADDR_16, 0x0000, "gc4c33"},  // gc4c33
+    {2, 0x30, I2C_ADDR_16, 0x0000, "sc132gs"},
   };
   std::vector<int> i2c_buss= {0,1,2,3,4,5,6};
 
