@@ -35,6 +35,8 @@ struct NodePara {
   int image_width_;
   int image_height_;
   int framerate_;
+  std::string gdc_file_path_;
+  int rotate_degree_;
 };
 
 typedef struct {
@@ -45,6 +47,9 @@ typedef struct {
   int height;
   int fps;
   int channel_;
+  int need_gdc_;
+	int rotate_degree_;
+  char gdc_file_path_[256];
 } MIPI_CAP_INFO_ST;
 
 typedef struct sensor_id {

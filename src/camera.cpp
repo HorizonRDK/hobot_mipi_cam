@@ -21,8 +21,7 @@
 using mipi_cam::MipiCamNode;
 
 int main(int argc, char** argv) {
-  RCLCPP_WARN(rclcpp::get_logger("mipi_cam"), "This is version for optimizing camera timestamp!");
-
+  RCLCPP_WARN(rclcpp::get_logger("mipi_cam"), "This is version for optimizing camera timestampV2!");
   rclcpp::init(argc, argv);
   rclcpp::NodeOptions opt;
   auto node = std::make_shared<MipiCamNode>(opt);

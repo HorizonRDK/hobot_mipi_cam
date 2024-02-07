@@ -168,7 +168,13 @@ int MipiCamIml::init(struct NodePara &para) {
   cap_info_.height = nodePare_.image_height_;
   cap_info_.fps = nodePare_.framerate_;
   cap_info_.channel_ = nodePare_.channel_;
-
+  cap_info_.rotate_degree_ = para.rotate_degree_;
+  cap_info_.need_gdc_ = !(para.gdc_file_path_ == "empty");
+  if (cap_info_.need_gdc_) {
+    memcpy(cap_info_.gdc_file_path_,
+           para.gdc_file_path_.c_str(), para.gdc_file_path_.size() + 1);
+  }
+  
   if (mipiCap_ptr_->initEnv() < 0) {
     RCLCPP_ERROR(rclcpp::get_logger("mipi_cam"),
     "[%s]->init %s's mipi host and gpio failure: %s\r\n", __func__, board_type.c_str());

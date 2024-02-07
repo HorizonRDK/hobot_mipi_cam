@@ -1,5 +1,9 @@
 # Changelog for package mipi_cam
 
+tros_2.1.7 (2024-02-07)
+------------------
+1. Add support of camera sc132gs。
+
 tros_2.1.6 (2023-09-13)
 ------------------
 1. RDK Ultra支持sensor自适应选择。

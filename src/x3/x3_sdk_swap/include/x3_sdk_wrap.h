@@ -34,7 +34,7 @@ extern "C" {
 
 typedef struct {
 	/* gdc 配置文件 */
-	char m_gdc_config[128];
+	char m_gdc_config[256];
 	ROTATION_E m_rotation;
 } x3_gdc_info_t;
 
@@ -70,6 +70,8 @@ typedef struct {
 	/* 以下是vps输出通道配置，最多支持7个通道，第7个通道需要从通道2 online给到pym */
 	int m_chn_num; // 使能几个通道
 	x3_vps_chn_attr_t m_vps_chn_attrs[7];
+  int m_need_gdc;
+  x3_gdc_info_t m_gdc_info;
 } x3_vps_info_t;
 
 // 多个VPS group的配置

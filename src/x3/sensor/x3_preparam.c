@@ -21,6 +21,7 @@
 #include "sensor_imx219_config.h"
 #include "sensor_imx477_config.h"
 #include "sensor_ov5647_config.h"
+#include "sensor_sc132gs_config.h"
 #include "x3_sdk_wrap.h"
 
 /******************************* F37 方案 **********************************/
@@ -166,6 +167,23 @@ int ov5647_linear_vin_param_init(x3_vin_info_t* vin_info) {
   vin_info->pipeinfo = PIPE_ATTR_OV5647_LINEAR_BASE;
   vin_info->disinfo = DIS_ATTR_OV5647_LINEAR_BASE;
   vin_info->ldcinfo = LDC_ATTR_OV5647_LINEAR_BASE;
+  vin_info->vin_vps_mode = VIN_ONLINE_VPS_OFFLINE;  // VIN_OFFLINE_VPS_OFFINE;
+
+  // 单目的使用dev_id 和 pipe_id 都设置成0
+  vin_info->dev_id = 0;
+  vin_info->pipe_id = 0;
+  vin_info->enable_dev_attr_ex = 0;
+
+  return 0;
+}
+
+int sc132gs_linear_vin_param_init(x3_vin_info_t* vin_info) {
+  vin_info->snsinfo = SENSOR_SC132GS_30FPS_1280P_LINEAR_INFO;
+  vin_info->mipi_attr = MIPI_SENSOR_SC132GS_30FPS_1280P_LINEAR_ATTR;
+  vin_info->devinfo = DEV_ATTR_SC132GS_LINEAR_BASE;
+  vin_info->pipeinfo = PIPE_ATTR_SC132GS_LINEAR_BASE;
+  vin_info->disinfo = DIS_ATTR_SC132GS_BASE;
+  vin_info->ldcinfo = LDC_ATTR_SC132GS_BASE;
   vin_info->vin_vps_mode = VIN_ONLINE_VPS_OFFLINE;  // VIN_OFFLINE_VPS_OFFINE;
 
   // 单目的使用dev_id 和 pipe_id 都设置成0
