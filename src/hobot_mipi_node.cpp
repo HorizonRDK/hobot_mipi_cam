@@ -215,6 +215,13 @@ bool MipiCamNode::sendCalibration(const builtin_interfaces::msg::Time& stamp) {
 
 void MipiCamNode::update() {
   if (mipiCam_ptr_->isCapturing()) {
+    /*
+    如果不使用UniquePtr，即使是开启了intra process communication，也会存在数据拷贝：
+    http://docs.ros.org/en/humble/Tutorials/Demos/Intra-Process-Communication.html
+    This is because we’re publishing and subscribing with std::unique_ptrs which allow ownership of a message to be moved around the system safely. 
+    */
+    sensor_msgs::msg::Image::UniquePtr img_(new sensor_msgs::msg::Image());
+
     if (!mipiCam_ptr_->getImage(img_->header.stamp,
                             img_->encoding,
                             img_->height,
@@ -225,23 +232,22 @@ void MipiCamNode::update() {
       return;
     }
       
-    {
-      // 修改数据时间戳，用于测试传输latency
-      struct timespec ts;
-      clock_gettime(CLOCK_REALTIME, &ts);
-      img_->header.stamp.sec = ts.tv_sec;
-      img_->header.stamp.nanosec = ts.tv_nsec;
-    }
+    // 修改数据时间戳，用于测试传输latency
+    img_->header.stamp = this->now();
     
     // save_yuv(img_->header.stamp, (void *)&img_->data[0], img_->data.size());
     
-    RCLCPP_INFO_STREAM(rclcpp::get_logger("mipi_cam"),
-              "got image ts: " << img_->header.stamp.sec << "." << img_->header.stamp.nanosec);
+    // RCLCPP_INFO_STREAM(rclcpp::get_logger("mipi_cam"),
+    //           "got image ts: " << img_->header.stamp.sec << "." << img_->header.stamp.nanosec);
 
-    image_pub_->publish(*img_);
+    // RCLCPP_INFO_STREAM(rclcpp::get_logger("mipi_cam"),
+    //           "published image ts: " << img_->header.stamp.sec << "." << img_->header.stamp.nanosec);
+              
+    printf("published image: [0x%x], ts: [%ld.%ld]\n", img_.get(), img_->header.stamp.sec, img_->header.stamp.nanosec);
 
-    RCLCPP_INFO_STREAM(rclcpp::get_logger("mipi_cam"),
-              "published image ts: " << img_->header.stamp.sec << "." << img_->header.stamp.nanosec);
+    // image_pub_->publish(*img_);
+    image_pub_->publish(std::move(img_));
+
     return;
 
 
