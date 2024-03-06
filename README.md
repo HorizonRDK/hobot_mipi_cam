@@ -68,7 +68,7 @@ mipi_cam.launch.py配置默认输出960*544分辨率NV12图像，发布的话题
 
 ```shell
 source /opt/tros/setup.bash
-ros2 launch hobot_codec hobot_codec_encode.launch.py codec_out_format:=jpeg-compressed codec_pub_topic:=/image_raw/compressed
+ros2 launch hobot_codec hobot_codec_encode.launch.py codec_out_format:=jpeg codec_pub_topic:=/image_raw/compressed
 ```
 
 保证PC与RDK X3处于同一网段，以Foxy版本为例在PC上执行

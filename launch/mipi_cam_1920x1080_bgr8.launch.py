@@ -14,15 +14,21 @@
 
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
-from launch.substitutions import LaunchConfiguration
+from launch.substitutions import LaunchConfiguration, TextSubstitution
 from launch_ros.actions import Node
-
+from ament_index_python.packages import get_package_prefix
+import os
 
 def generate_launch_description():
+    config_file_path = os.path.join(
+        get_package_prefix('mipi_cam'),
+        "lib/mipi_cam/config/F37_calibration.yaml")
+    print("config_file_path is ", config_file_path)
+
     return LaunchDescription([
         DeclareLaunchArgument(
             'mipi_camera_calibration_file_path',
-            default_value='/opt/tros/lib/mipi_cam/config/F37_calibration.yaml',
+            default_value=TextSubstitution(text=str(config_file_path)),
             description='mipi camera calibration file path'),
         DeclareLaunchArgument(
             'mipi_out_format',

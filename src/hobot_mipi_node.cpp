@@ -44,8 +44,10 @@ MipiCamNode::~MipiCamNode() {
 }
 
 void MipiCamNode::getParams() {
+  std::string tros_distro
+      = std::string(std::getenv("TROS_DISTRO")? std::getenv("TROS_DISTRO") : "");
   // declare params
-  this->declare_parameter("config_path", "/opt/tros/lib/mipi_cam/config/");
+  this->declare_parameter("config_path", "/opt/tros/" + tros_distro + "/lib/mipi_cam/config/");
   this->declare_parameter("channel", 0);
   this->declare_parameter("camera_info_url", "");
   this->declare_parameter("framerate", 30.0);  // 10.0);
