@@ -1,5 +1,9 @@
 # Changelog for package mipi_cam
 
+tros_2.1.8 (2024-3-6)
+------------------
+1. 配置文件路径由`/opt/tros/lib`变更为`/opt/tros/${TROS_DISTRO}/lib`。
+
 tros_2.1.6 (2023-09-13)
 ------------------
 1. RDK Ultra支持sensor自适应选择。
