@@ -27,13 +27,10 @@
 #include "sensor_msgs/msg/camera_info.hpp"
 
 #include "sensor_msgs/msg/image.hpp"
-#include "std_srvs/srv/set_bool.hpp"
 #include <std_msgs/msg/string.hpp>
 
-#ifdef USING_HBMEM
 #include "hb_mem_mgr.h"
 #include "hbm_img_msgs/msg/hbm_msg1080_p.hpp"
-#endif
 
 namespace mipi_cam
 {
@@ -61,11 +58,10 @@ class MipiCamNode : public rclcpp::Node {
   rclcpp::Publisher<sensor_msgs::msg::CameraInfo>::SharedPtr info_pub_ = nullptr;
   rclcpp::TimerBase::SharedPtr timer_;
 
-#ifdef USING_HBMEM
   int32_t mSendIdx = 0;
   rclcpp::TimerBase::SharedPtr timer_hbmem_;
-  rclcpp::PublisherHbmem<hbm_img_msgs::msg::HbmMsg1080P>::SharedPtr publisher_hbmem_;
-#endif
+  rclcpp::Publisher<hbm_img_msgs::msg::HbmMsg1080P>::SharedPtr publisher_hbmem_;
+
   // parameters
   std::string frame_id_;
   std::string io_method_name_;  // hbmem zero mem copy

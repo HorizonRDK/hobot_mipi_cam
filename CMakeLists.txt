@@ -26,10 +26,6 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 add_compile_options(-w)
-if(BUILD_HBMEM)
-add_definitions(-DUSING_HBMEM)
-find_package(hbm_img_msgs REQUIRED)
-endif()
 
 find_package(ament_cmake_auto REQUIRED)
 ament_auto_find_build_dependencies()
@@ -129,16 +125,11 @@ ament_target_dependencies(
   yaml_cpp_vendor
   )
 
-if(BUILD_HBMEM)
-  target_link_libraries(${PROJECT_NAME}
-  hbmem
-)
 ament_target_dependencies(
   ${PROJECT_NAME}
   rclcpp
   hbm_img_msgs
 )
-endif()
 
 # Install executables
 install(

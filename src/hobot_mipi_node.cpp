@@ -162,14 +162,12 @@ void MipiCamNode::init() {
       io_method_name_.c_str(),
       nodePare_.framerate_);
   // set the IO method
-#ifdef USING_HBMEM
   if (io_method_name_.compare("shared_mem") == 0) {
     // 创建hbmempub
     publisher_hbmem_ =
-        this->create_publisher_hbmem<hbm_img_msgs::msg::HbmMsg1080P>(
+        this->create_publisher<hbm_img_msgs::msg::HbmMsg1080P>(
             "hbmem_img", PUB_BUF_NUM);
   }
-#endif
 
   // start the camera
   if (0 != mipiCam_ptr_->start()) {
@@ -223,7 +221,7 @@ void MipiCamNode::update() {
     save_yuv(img_->header.stamp, (void *)&img_->data[0], img_->data.size());
     image_pub_->publish(*img_);
     if (sendCalibration(img_->header.stamp)) {
-      RCLCPP_INFO(rclcpp::get_logger("mipi_node"), "publish camera info.\n");
+      RCLCPP_INFO_STREAM(rclcpp::get_logger("mipi_node"), "publish camera info.\n");
     } else {
       RCLCPP_INFO(rclcpp::get_logger("mipi_node"),
                   "Unable to publish camera info.\n");
@@ -232,7 +230,6 @@ void MipiCamNode::update() {
 }
 
 void MipiCamNode::hbmemUpdate() {
-#ifdef USING_HBMEM
   if (mipiCam_ptr_->isCapturing()) {
     auto loanedMsg = publisher_hbmem_->borrow_loaned_message();
     if (loanedMsg.is_valid()) {
@@ -252,17 +249,16 @@ void MipiCamNode::hbmemUpdate() {
       msg.index = mSendIdx++;
       publisher_hbmem_->publish(std::move(loanedMsg));
       if (sendCalibration(msg.time_stamp)) {
-        RCLCPP_INFO(rclcpp::get_logger("mipi_node"), "publish camera info.\n");
+        RCLCPP_INFO(rclcpp::get_logger("mipi_node"), "publish camera info.");
       } else {
         RCLCPP_INFO(rclcpp::get_logger("mipi_node"),
-                    "Unable to publish camera info.\n");
+                    "Unable to publish camera info.");
       }
     } else {
       RCLCPP_INFO(rclcpp::get_logger("mipi_node"),
                   "borrow_loaned_message failed");
     }
   }
-#endif
 }
 
 void MipiCamNode::save_yuv(const builtin_interfaces::msg::Time stamp,
