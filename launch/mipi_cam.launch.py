@@ -18,6 +18,9 @@ from launch.actions import DeclareLaunchArgument
 from launch.substitutions import TextSubstitution
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
+from launch.actions import IncludeLaunchDescription
+from launch.launch_description_sources import PythonLaunchDescriptionSource
+from ament_index_python import get_package_share_directory
 from ament_index_python.packages import get_package_prefix
 import os
 
@@ -26,6 +29,13 @@ def generate_launch_description():
         get_package_prefix('mipi_cam'),
         "lib/mipi_cam/config/F37_calibration.yaml")
     print("config_file_path is ", config_file_path)
+
+    shm_node = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(
+                get_package_share_directory('hobot_shm'),
+                'launch/hobot_shm.launch.py'))
+    )
 
     return LaunchDescription([
         DeclareLaunchArgument(
@@ -56,6 +66,8 @@ def generate_launch_description():
             'mipi_video_device',
             default_value='default',
             description='mipi camera device'),
+        # 启动零拷贝环境配置node
+        shm_node,
         # 启动图片发布pkg
         Node(
             package='mipi_cam',
