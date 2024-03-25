@@ -35,6 +35,10 @@ struct NodePara {
   int image_width_;
   int image_height_;
   int framerate_;
+  // The type of timestamp for publishing messages
+  // "realtime": Uses the system CLOCK_REALTIME time when the image data is obtained
+  // "sensor"/"default": Uses the time when the sensor captures the image, which is the time obtained through the getFrame interface
+  std::string frame_ts_type_ {"sensor"};
 };
 
 typedef struct {

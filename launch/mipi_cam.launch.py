@@ -30,13 +30,6 @@ def generate_launch_description():
         "lib/mipi_cam/config/F37_calibration.yaml")
     print("config_file_path is ", config_file_path)
 
-    shm_node = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            os.path.join(
-                get_package_share_directory('hobot_shm'),
-                'launch/hobot_shm.launch.py'))
-    )
-
     return LaunchDescription([
         DeclareLaunchArgument(
             "mipi_config_path", 
@@ -66,8 +59,17 @@ def generate_launch_description():
             'mipi_video_device',
             default_value='default',
             description='mipi camera device'),
+        DeclareLaunchArgument(
+            'mipi_frame_ts_type',
+            default_value='sensor',
+            description='type(sensor/realtime) of timestamp for publishing messages'),
         # 启动零拷贝环境配置node
-        shm_node,
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(
+                os.path.join(
+                    get_package_share_directory('hobot_shm'),
+                    'launch/hobot_shm.launch.py'))
+        ),
         # 启动图片发布pkg
         Node(
             package='mipi_cam',
@@ -81,8 +83,9 @@ def generate_launch_description():
                 {"image_width": LaunchConfiguration('mipi_image_width')},
                 {"image_height": LaunchConfiguration('mipi_image_height')},
                 {"io_method": LaunchConfiguration('mipi_io_method')},
-                {"video_device": LaunchConfiguration('mipi_video_device')}
+                {"video_device": LaunchConfiguration('mipi_video_device')},
+                {"frame_ts_type": LaunchConfiguration('mipi_frame_ts_type')},
             ],
-            arguments=['--ros-args', '--log-level', 'error']
+            arguments=['--ros-args', '--log-level', 'warn']
         )
     ])

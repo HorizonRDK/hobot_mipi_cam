@@ -20,8 +20,9 @@
 #include <string>
 #include <vector>
 #include <fstream>
-
-
+#include "rcpputils/env.hpp"
+#include "rcutils/env.h"
+  
 #define PUB_BUF_NUM 5
 namespace mipi_cam {
 
@@ -58,6 +59,7 @@ void MipiCamNode::getParams() {
   this->declare_parameter("out_format", "bgr8");   // nv12
   this->declare_parameter("video_device", "");  // "F37");
   this->declare_parameter("camera_calibration_file_path", "");
+  this->declare_parameter("frame_ts_type", nodePare_.frame_ts_type_);
   auto parameters_client = std::make_shared<rclcpp::SyncParametersClient>(this);
   for (auto& parameter :
        parameters_client->get_parameters({"config_path",
@@ -70,7 +72,9 @@ void MipiCamNode::getParams() {
                                           "image_width",
                                           "io_method",
                                           "video_device",
-                                          "camera_calibration_file_path"})) {
+                                          "camera_calibration_file_path",
+                                          "frame_ts_type"
+                                          })) {
     if (parameter.get_name() == "config_path") {
       RCLCPP_INFO(rclcpp::get_logger("mipi_node"),
                   "config_path value: %s",
@@ -117,6 +121,11 @@ void MipiCamNode::getParams() {
       RCLCPP_INFO(rclcpp::get_logger("mipi_node"),
                   "camera_calibration_file_path value: %s",
                   parameter.value_to_string().c_str());
+    } else if (parameter.get_name() == "frame_ts_type") {
+      nodePare_.frame_ts_type_ = parameter.value_to_string();
+      RCLCPP_WARN(rclcpp::get_logger("mipi_node"),
+                  "frame_ts_type value: %s",
+                  nodePare_.frame_ts_type_.c_str());
     } else {
       RCLCPP_WARN(rclcpp::get_logger("mipi_node"),
                   "Invalid parameter name: %s",
@@ -163,6 +172,22 @@ void MipiCamNode::init() {
       nodePare_.framerate_);
   // set the IO method
   if (io_method_name_.compare("shared_mem") == 0) {
+    std::string ros_zerocopy_env = rcpputils::get_env_var("RMW_FASTRTPS_USE_QOS_FROM_XML");
+    if (ros_zerocopy_env.empty()) {
+      RCLCPP_ERROR_STREAM(this->get_logger(),
+        "Launching with zero-copy, but env of `RMW_FASTRTPS_USE_QOS_FROM_XML` is not set. "
+        << "Transporting data without zero-copy!");
+    } else {
+      if ("1" == ros_zerocopy_env) {
+        RCLCPP_WARN_STREAM(this->get_logger(), "Enabling zero-copy");
+      } else {
+        RCLCPP_ERROR_STREAM(this->get_logger(),
+          "env of `RMW_FASTRTPS_USE_QOS_FROM_XML` is [" << ros_zerocopy_env
+          << "], which should be set to 1. "
+          << "Data transporting without zero-copy!");
+      }
+    }
+
     // 创建hbmempub
     publisher_hbmem_ =
         this->create_publisher<hbm_img_msgs::msg::HbmMsg1080P>(
@@ -218,6 +243,12 @@ void MipiCamNode::update() {
       RCLCPP_ERROR(rclcpp::get_logger("mipi_node"), "grab failed");
       return;
     }
+    if ("realtime" == nodePare_.frame_ts_type_) {
+      struct timespec ts;
+      clock_gettime(CLOCK_REALTIME, &ts);
+      img_->header.stamp.sec = ts.tv_sec;
+      img_->header.stamp.nanosec = ts.tv_nsec;
+    }
     save_yuv(img_->header.stamp, (void *)&img_->data[0], img_->data.size());
     image_pub_->publish(*img_);
     if (sendCalibration(img_->header.stamp)) {
@@ -244,6 +275,12 @@ void MipiCamNode::hbmemUpdate() {
         RCLCPP_ERROR(rclcpp::get_logger("mipi_node"),
                      "hbmemUpdate grab img failed");
         return;
+      }
+      if ("realtime" == nodePare_.frame_ts_type_) {
+        struct timespec ts;
+        clock_gettime(CLOCK_REALTIME, &ts);
+        msg.time_stamp.sec = ts.tv_sec;
+        msg.time_stamp.nanosec = ts.tv_nsec;
       }
       save_yuv(msg.time_stamp, (void *)&msg.data, msg.data_size);
       msg.index = mSendIdx++;
