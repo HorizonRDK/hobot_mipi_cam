@@ -97,7 +97,6 @@ Open another terminal
 ```shell
 source /opt/tros/local_setup.bash
 # Start the websocket
-``````
 ros2 launch websocket websocket.launch.py websocket_image_topic:=/image_jpeg websocket_only_show_image:=true
 ```
 
